@@ -1,0 +1,9 @@
+.navbar-custom {
+    background-color: #587f37;
+}
+.navbar-custom .nav-link {
+    color: white;
+    }
+.navbar-custom .nav-link:hover {
+    color: #d4e8c5;
+    }
