@@ -68,6 +68,44 @@ def product_management():
         products_list.append(product)
     return render_template('product-management.html', products_list=products_list, title = "Manage Products")
 
+@app.route('/update-product/<int:id>/', methods=['POST', 'GET'])
+def update_product(id):
+    update_product = ProductForm(request.form)
+    if request.method == 'POST' and update_product.validate(): # if update is valid
+        products_dict = {}
+        db = shelve.open('storage.db', 'w')
+        products_dict = db['Products']
+        product = products_dict.get(id)
+        product.set_name(update_product.name.data)
+        product.set_description(update_product.description.data)
+        product.set_qty(update_product.qty.data)
+        product.set_selling_price(update_product.selling_price.data)
+        product.set_cost_price(update_product.cost_price.data)
+        product.set_in_stock(update_product.in_stock.data)
+        db['Products'] = products_dict
+        db.close()
+        return redirect(url_for('product_management'))
+    else: # for the get request - preload the page with existing details
+          # idk why but theres type error if i dont fill it?
+        products_dict = {}
+        db = shelve.open('storage.db', 'r')
+        products_dict = db['Products']
+        db.close()
+        
+        # populate form with existing data
+        product = products_dict.get(id)
+        update_product.name.data = product.get_name()
+        update_product.description.data = product.get_description()
+        update_product.qty.data = product.get_qty()
+        update_product.selling_price.data = product.get_selling_price()
+        update_product.cost_price.data = product.get_cost_price()
+        update_product.in_stock.data = product.get_in_stock()
+        
+        return render_template('update-product.html', form=update_product,
+                               title = "Update Product")
+
+
+
 
 
 if __name__ == '__main__':
