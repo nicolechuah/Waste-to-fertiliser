@@ -32,6 +32,7 @@ def join_us():
 @app.route('/create-product', methods=['GET', 'POST'])
 def create_product():
     create_product = ProductForm(request.form)
+    # create object of ProductForm class
     if request.method == 'POST' and create_product.validate():
         product_dict = {}
         db = shelve.open('storage.db', 'c')
@@ -71,6 +72,7 @@ def product_management():
 @app.route('/update-product/<int:id>/', methods=['POST', 'GET'])
 def update_product(id):
     update_product = ProductForm(request.form)
+    # create object of ProductForm class
     if request.method == 'POST' and update_product.validate(): # if update is valid
         products_dict = {}
         db = shelve.open('storage.db', 'w')
@@ -103,8 +105,16 @@ def update_product(id):
         
         return render_template('update-product.html', form=update_product,
                                title = "Update Product")
-
-
+@app.route('/delete-product/<int:id>', methods=['POST'])
+def delete_product(id):
+    # stored variable id is passed from delete button @ product-management
+    products_dict = {}
+    db = shelve.open('storage.db', 'w')
+    products_dict = db['Products']
+    products_dict.pop(id)
+    db['Products'] = products_dict
+    db.close()
+    return redirect(url_for('product_management'))
 
 
 
