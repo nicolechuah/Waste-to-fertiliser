@@ -1,7 +1,7 @@
 class Product():
     product_id = 0
     
-    def __init__(self, name, description, qty, selling_price, cost_price, in_stock):
+    def __init__(self, name, description, qty, selling_price, cost_price, in_stock, image = "default_product.png"):
         Product.product_id += 1
         self.__product_id = Product.product_id
         self.__name = name
@@ -10,6 +10,7 @@ class Product():
         self.__selling_price = selling_price
         self.__cost_price = cost_price
         self.__in_stock = in_stock
+        self.__image = image
         
     def get_product_id(self):
         return self.__product_id
@@ -32,6 +33,9 @@ class Product():
     def get_in_stock(self):
         return self.__in_stock
     
+    def get_image(self):
+        return self.__image
+    
     def set_name(self, name):
         self.__name = name
         
@@ -50,5 +54,8 @@ class Product():
     def set_in_stock(self, in_stock):
         self.__in_stock = in_stock
         
+    def set_image(self, image):
+        self.__image = image
+        
     def __str__(self):
-        return f"Product ID: {self.__product_id}, Name: {self.__name}, Description: {self.__description}, Quantity: {self.__qty}, In Stock: {self.__in_stock}"
+        return f"Product ID: {self.__product_id}, Name: {self.__name}, Image: {self.__image}, In Stock: {self.__in_stock}"

@@ -1,3 +1,4 @@
+import secrets, os
 from flask import Flask, render_template, request, redirect, url_for
 from Product import Product
 from forms import ProductForm
@@ -6,6 +7,7 @@ import shelve
 
 
 app = Flask(__name__)
+app.config["UPLOAD_FOLDER"] = "static/images"
 
 @app.route('/')
 def home():
@@ -29,11 +31,26 @@ def help():
 def join_us():
     return render_template('join-us.html')
 
+def save_picture(image):
+        random_hex = secrets.token_hex(8) #randomize filename
+        f_name, f_ext = os.path.splitext(image.filename) #split filename and extension
+        image_fn = random_hex + f_ext #combine random hex and extension
+        image_path = os.path.join(app.config['UPLOAD_FOLDER'], image_fn) #combine root path and image path
+        image.save(image_path) #save image to path
+        return image_fn
+
 @app.route('/create-product', methods=['GET', 'POST'])
 def create_product():
     create_product = ProductForm(request.form)
     # create object of ProductForm class
+    
     if request.method == 'POST' and create_product.validate():
+        image = request.files['image']
+        if image:
+            saved_image = save_picture(image)
+        else:
+            saved_image = "default_product.png"
+        
         product_dict = {}
         db = shelve.open('storage.db', 'c')
         
@@ -45,7 +62,7 @@ def create_product():
         except:
             print("Error in retrieving Products from storage.db")
         product = Product(create_product.name.data, create_product.description.data, create_product.qty.data, 
-                          create_product.selling_price.data, create_product.cost_price.data, create_product.in_stock.data)
+                          create_product.selling_price.data, create_product.cost_price.data, create_product.in_stock.data, saved_image)
         product_dict[product.get_product_id()] = product
         db['Products'] = product_dict
         db['ProductIDs'] = Product.product_id
@@ -54,6 +71,8 @@ def create_product():
         
         return redirect(url_for('product_management'))
     return render_template('create-product.html', form=create_product, title = "Create Product")
+
+
 
 @app.route('/product-management')
 def product_management():
