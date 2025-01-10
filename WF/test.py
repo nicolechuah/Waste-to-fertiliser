@@ -2,7 +2,7 @@ from __init__ import *
 
 import shelve
 
-with shelve.open('user.db') as db:
+with shelve.open('storage.db') as db:
     users = db.get('Users', {})
     for user_id, user in users.items():
         print(f"User ID: {user_id}")

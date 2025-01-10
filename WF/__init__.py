@@ -30,14 +30,14 @@ def register():
     form = RegistrationForm()
     if form.validate_on_submit():
         users_dict = {}
-        db = shelve.open('user.db', 'c')
+        db = shelve.open('storage.db', 'c')
         user_id = db.get('UserIDs', 0)
         user_id += 1
 
         try:
             users_dict = db['Users']
         except:
-            print("Error in retrieving Users from user.db.")
+            print("Error in retrieving Users from storage.db.")
 
             # Check for duplicate email
         for user in users_dict.values():
@@ -67,7 +67,7 @@ def login():
     form = LoginForm()
     if form.validate_on_submit():
         users_dict = {}
-        db = shelve.open('user.db', 'r')
+        db = shelve.open('storage.db', 'r')
         users_dict = db['Users']
         db.close()
         
@@ -93,7 +93,7 @@ def logout():
 def account():
     form = AccountForm()
     users_dict = {}
-    db = shelve.open('user.db', 'c')
+    db = shelve.open('storage.db', 'c')
     users_dict = db['Users']
 
     current_user_id = None
@@ -155,7 +155,7 @@ def account():
 
 @app.route("/account/delete", methods=['POST'])
 def delete_account():
-    db = shelve.open('user.db', 'c')
+    db = shelve.open('storage.db', 'c')
     users_dict = db.get('Users', {})
     current_user_id = None
 
