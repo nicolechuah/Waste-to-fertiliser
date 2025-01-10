@@ -7,3 +7,17 @@
 .navbar-custom .nav-link:hover {
     color: #d4e8c5;
     }
+
+.content-section {
+  background: #ffffff;
+  padding: 10px 20px;
+  border: 1px solid #dddddd;
+  border-radius: 3px;
+  margin-top: 30px;
+  margin-bottom: 10px;
+}
+
+.rounded-circle {
+    border-radius: 50%;
+    object-fit: cover; /* Ensures the image fits properly */
+}
