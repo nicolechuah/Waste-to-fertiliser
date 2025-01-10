@@ -1,5 +1,5 @@
 from flask import Flask, render_template, url_for, flash, redirect, request, session
-from Forms import RegistrationForm, LoginForm, AccountForm
+from Forms import RegistrationForm, LoginForm, AccountForm, ProductForm
 from flask_bcrypt import Bcrypt
 from flask_login import login_user, current_user, logout_user, login_required
 import shelve, User
@@ -8,7 +8,6 @@ from werkzeug.utils import secure_filename
 import os
 import secrets
 from Product import Product
-from forms import ProductForm
 import shelve
 
 
