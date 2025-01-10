@@ -32,5 +32,5 @@ class AccountForm(FlaskForm):
 class DeleteAccountForm(FlaskForm):
     submit = SubmitField('Delete Account')
     
-    
+   
     
