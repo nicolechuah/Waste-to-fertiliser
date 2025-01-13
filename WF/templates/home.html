@@ -3,8 +3,18 @@
 {% block content %}
 <h1>Our Products</h1>
     {% for product in products_list %}
-        <p>{{product.get_name()}}</p>
-        <p>{{product.get_selling_price()}}</p>
+    <div class="" border="1">
+        <div class="card" style="width: 18rem;">
+            <img src="{{ url_for('static', filename='images/' +  product.get_image()) }}" 
+				alt="{{ product.get_name() }}">
+            <div class="card-body">
+            <h5 class="card-title">{{product.get_name()}}</h5>
+            <p class="card-text">{{product.get_selling_price()}}</p>
+            <a href="#" class="btn btn-primary">Add to cart</a>
+            </div>
+        </div>
+    </div>
+    
     {% endfor %}
 
     
