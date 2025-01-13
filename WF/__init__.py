@@ -282,12 +282,14 @@ def delete_product(id):
     db.close()
     return redirect(url_for('product_management'))
 
+
+
 @app.route('/user_fwf', methods=['GET', 'POST'])
 def fwf_user():
     fwf_user_form = UserFWF(request.form)
     if request.method == 'POST' and fwf_user_form.validate():
         fwfuser_dict = {}
-        db = shelve.open('FWFUser.db', 'c')
+        db = shelve.open('storage.db', 'c')
 
         try:
             fwfuser_dict = db['FWFUser']
@@ -310,7 +312,7 @@ def fwf_user():
 
 @app.route('/regconfirm/<int:fwfuser_id>', methods=['GET'])
 def view(fwfuser_id):
-    db = shelve.open('FWFUser.db', 'r')
+    db = shelve.open('storage.db', 'r')
     try:
         fwfuser_dict = db['FWFUser']
 
@@ -337,7 +339,7 @@ def edit_fwfuser(id):
     edit_fwfuser_form = UserFWF(request.form)
 
     if request.method == 'POST' and edit_fwfuser_form.validate():
-        db = shelve.open('FWFUser.db', 'w')
+        db = shelve.open('storage.db', 'w')
         fwfuser_dict = db.get('FWFUser', {})
 
         fwfuser = fwfuser_dict.get(id)
@@ -358,7 +360,7 @@ def edit_fwfuser(id):
 
     else:
         # Open the shelve database in read mode
-        db = shelve.open('FWFUser.db', 'r')
+        db = shelve.open('storage.db', 'r')
 
         # Retrieve the users' data
         fwfuser_dict = db.get('FWFUser', {})
@@ -399,7 +401,7 @@ def delete_fwfuser(id):
 @app.route('/fwfuser_ADretrieve', methods=['GET'])
 def fwfuser_ADretrieve():
     fwfusers_dict ={}
-    db = shelve.open('FWFUser.db', 'r')
+    db = shelve.open('storage.db', 'r')
 
     fwfusers_dict = db['FWFUser']
     db.close()

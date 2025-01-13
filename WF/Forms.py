@@ -2,7 +2,7 @@ from flask_wtf import FlaskForm
 from flask_wtf.file import FileField, FileAllowed
 from wtforms.validators import DataRequired, Length, Email, EqualTo, ValidationError
 from wtforms import Form, StringField, IntegerField, FloatField, BooleanField, validators, SubmitField
-from wtforms import PasswordField, BooleanField, TextAreaField, SelectField
+from wtforms import PasswordField, BooleanField, TextAreaField, SelectField, EmailField
 from flask_login import current_user
 import User
 
@@ -39,8 +39,7 @@ class ProductForm(Form):
     selling_price = FloatField('Selling Price', [validators.NumberRange(min=1, max=10000), validators.DataRequired()])
     cost_price = FloatField('Cost Price', [validators.NumberRange(min=1, max=10000), validators.DataRequired()])
     in_stock = BooleanField('In Stock', [validators.Optional()], default=True)
-    from wtforms import Form, StringField, RadioField, SelectField, TextAreaField, validators
-from wtforms.fields import EmailField, DateField
+
 
 class UserFWF(Form):
     first_name = StringField('First Name', [validators.Length(min=1, max=150), validators.DataRequired()])
