@@ -20,7 +20,12 @@ app.config['UPLOAD_FOLDER'] = 'static/images'
 
 @app.route('/')
 def home():
-    db = shelve.open('storage.db', 'r')
+    try:
+        db = shelve.open('storage.db', 'r')
+    except:
+        print("Error in retrieving data from storage.db")
+        db = shelve.open('storage.db', 'c')
+        db['Products'] = {}
     products_dict = db['Products']
     db.close()
 
@@ -224,8 +229,12 @@ def create_product():
 @app.route('/product-management')
 def product_management():
     products_dict = {}
-    db = shelve.open('storage.db', 'r')
-    
+    try:
+        db = shelve.open('storage.db', 'r')
+    except:
+        print("Error in retrieving data from storage.db")
+        db = shelve.open('storage.db', 'c')
+        db['Products'] = {}
     products_dict = db['Products']
     db.close()
     
@@ -312,7 +321,12 @@ def fwf_user():
 
 @app.route('/regconfirm/<int:fwfuser_id>', methods=['GET'])
 def view(fwfuser_id):
-    db = shelve.open('storage.db', 'r')
+    try:
+        db = shelve.open('storage.db', 'r')
+    except:
+        print("Error in retrieving data from storage.db")
+        db = shelve.open('storage.db', 'c')
+        db['FWFUser'] = {}
     try:
         fwfuser_dict = db['FWFUser']
 
@@ -360,7 +374,12 @@ def edit_fwfuser(id):
 
     else:
         # Open the shelve database in read mode
-        db = shelve.open('storage.db', 'r')
+        try:
+            db = shelve.open('storage.db', 'r')
+        except:
+            print("Error in retrieving data from storage.db")
+            db = shelve.open('storage.db', 'c')
+            db['FWFUser'] = {}
 
         # Retrieve the users' data
         fwfuser_dict = db.get('FWFUser', {})
@@ -401,7 +420,12 @@ def delete_fwfuser(id):
 @app.route('/fwfuser_ADretrieve', methods=['GET'])
 def fwfuser_ADretrieve():
     fwfusers_dict ={}
-    db = shelve.open('storage.db', 'r')
+    try:
+        db = shelve.open('storage.db', 'r')
+    except:
+        print("Error in retrieving data from storage.db")
+        db = shelve.open('storage.db', 'c')
+        db['FWFUser'] = {}
 
     fwfusers_dict = db['FWFUser']
     db.close()
