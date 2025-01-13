@@ -1,3 +1,4 @@
+
 <nav class="navbar navbar-expand-sm navbar-custom">
   <div class="container-fluid">
     <ul class="navbar-nav">
@@ -5,7 +6,7 @@
         <a class="nav-link" href="#">About Us</a>
       </li>
       <li class="nav-item">
-        <a class="nav-link" href="/">Products</a>
+        <a class="nav-link" href="#">Products</a>
       </li>
       <li class="nav-item">
         <a class="nav-link" href="#">Help</a>
@@ -18,23 +19,6 @@
                         <li><a class="dropdown-item" href="/fwfuser_ADretrieve">Admin Retrieve Registration</a></li>
                     </ul>
       </li>
-    </ul>
-    <ul class="navbar-nav">
-      {% if session.get('logged_in') %}
-          <li class="nav-item">
-            <a class="nav-link" href="{{ url_for('account') }}">Account</a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link" href="{{ url_for('logout') }}">Logout</a>
-          </li>
-        {% else %}
-          <li class="nav-item">
-            <a class="nav-link" href="{{ url_for('login') }}">Login</a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link" href="{{ url_for('register') }}">Register</a>
-          </li>
-        {% endif %}
     </ul>
   </div>
 </nav>
