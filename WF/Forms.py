@@ -41,7 +41,7 @@ class ProductForm(Form):
     qty = IntegerField('Quantity', [validators.NumberRange(min=1, max=1000), validators.DataRequired(message="Please enter a quantity.")])
     selling_price = FloatField('Selling Price', [validators.NumberRange(min=1, max=10000), validators.DataRequired(message="Please enter a selling price.")])
     cost_price = FloatField('Cost Price', [validators.NumberRange(min=1, max=10000), validators.DataRequired(message="Please enter a cost price.")])
-    in_stock = BooleanField('In Stock', [validators.Optional()], default=True)
+    visible = BooleanField('Visible', [validators.Optional()], default=True)
 
 class UserFWF(Form):
     first_name = StringField('First Name', [validators.Length(min=1, max=150), validators.DataRequired()])

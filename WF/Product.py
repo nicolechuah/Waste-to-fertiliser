@@ -1,7 +1,7 @@
 class Product():
     product_id = 0
     
-    def __init__(self, name, description, qty, selling_price, cost_price, in_stock, image = "default_product.png"):
+    def __init__(self, name, description, qty, selling_price, cost_price, visible, image = "default_product.png"):
         Product.product_id += 1
         self.__product_id = Product.product_id
         self.__name = name
@@ -9,7 +9,7 @@ class Product():
         self.__qty = qty
         self.__selling_price = selling_price
         self.__cost_price = cost_price
-        self.__in_stock = in_stock
+        self.__visible = visible
         self.__image = image
         
     def get_product_id(self):
@@ -30,8 +30,8 @@ class Product():
     def get_cost_price(self):
         return self.__cost_price
     
-    def get_in_stock(self):
-        return self.__in_stock
+    def get_visible(self):
+        return self.__visible
     
     def get_image(self):
         return self.__image
@@ -51,11 +51,11 @@ class Product():
     def set_cost_price(self, cost_price):
         self.__cost_price = cost_price
     
-    def set_in_stock(self, in_stock):
-        self.__in_stock = in_stock
+    def set_visible(self, visible):
+        self.__visible = visible
         
     def set_image(self, image):
         self.__image = image
         
     def __str__(self):
-        return f"Product ID: {self.__product_id}, Name: {self.__name}, Image: {self.__image}, In Stock: {self.__in_stock}"
+        return f"Product ID: {self.__product_id}, Name: {self.__name}, Image: {self.__image}, Visible: {self.__visible}"
