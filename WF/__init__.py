@@ -144,6 +144,16 @@ def delete_product(id):
     db.close()
     return redirect(url_for('product_management'))
 
+@app.route('/view-product/<int:id>', methods=['GET'])
+def view_product(id):
+    products_dict = {}
+    db = shelve.open('storage.db', 'r')
+    products_dict = db['Products']
+    db.close()
+    
+    product = products_dict.get(id)
+    return render_template('view-product.html', product=product, title = "View Product")
+
 ## Helper functions ##
 # SAVE IMAGE #
 def save_image(image):

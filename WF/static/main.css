@@ -7,3 +7,25 @@
 .navbar-custom .nav-link:hover {
     color: #d4e8c5;
     }
+
+
+/* css for product */
+.custom-container{
+    gap: 20px;
+    margin: 4em 10em;
+}
+
+.card a{
+    text-decoration: none; /* Remove underline */
+    display: block; /* Make the link cover the entire card */
+    height: 100%; /* Ensure the link covers the full height of the card */
+    width: 100%; /* Ensure the link covers the full width of the card */
+}
+
+.card-title, .card-text{
+    color: black;
+}
+
+.product-wrapper:hover{
+    box-shadow: 0 0 10px rgba(0,0,0,0.5);
+}

@@ -1,21 +1,29 @@
 {% extends "base.html" %}
 
 {% block content %}
-<h1>Our Products</h1>
+
+
+
+
+<h1 class = "mx-auto" style="width: 250px">Our Products</h1>
+    <div class="d-flex flex-wrap justify-content-start custom-container" id="products">
     {% for product in products_list %}
-    <div class="" border="1">
-        <div class="card" style="width: 18rem;">
+    <div class="product-wrapper" border="1">
+        <div class="card" style="width: 15rem;">
+            <a href="{{url_for('view_product', id = product.get_product_id())}}">
             <img src="{{ url_for('static', filename='images/' +  product.get_image()) }}" 
-				alt="{{ product.get_name() }}">
-            <div class="card-body">
-            <h5 class="card-title">{{product.get_name()}}</h5>
-            <p class="card-text">{{product.get_selling_price()}}</p>
+				alt="{{ product.get_name() }}" class = "card-img-top">
+            <div class="card-body text-center">
+            <h4 class="card-title">{{product.get_name()}}</h4>
+            <p class="card-text pb-2">{{product.get_selling_price()}}</p>
             <a href="#" class="btn btn-primary">Add to cart</a>
             </div>
+            </a>
         </div>
     </div>
-    
+
     {% endfor %}
+    </div>
 
     
 {% endblock %}
