@@ -325,21 +325,6 @@ def view_product(id):
     product = products_dict.get(id)
     return render_template('view-product.html', product=product, title = "View Product")
 
-## Helper functions ##
-# SAVE IMAGE #
-def save_image(image):
-        random_hex = secrets.token_hex(8) #randomize filename
-        f_name, f_ext = os.path.splitext(image.filename) #split filename and extension
-        image_fn = random_hex + f_ext #combine random hex and extension
-        image_path = os.path.join(app.config['UPLOAD_FOLDER'], image_fn) #combine root path and image path
-        image.save(image_path) #save image to path, save function is under the werkzeug library
-        return image_fn
-    
-    
-def delete_image(image):
-    image_path = os.path.join(app.config['UPLOAD_FOLDER'], image)
-    if os.path.exists(image_path) and image != "default_product.png":
-        os.remove(image_path)
 
 @app.route('/user_fwf', methods=['GET', 'POST'])
 def fwf_user():
@@ -484,7 +469,21 @@ def fwfuser_ADretrieve():
 
     return render_template('fwfuser_ADretrieve.html', count=len(fwfusers_list), fwfusers_list=fwfusers_list)
 
-
+## Helper functions ##
+# SAVE IMAGE #
+def save_image(image):
+        random_hex = secrets.token_hex(8) #randomize filename
+        f_name, f_ext = os.path.splitext(image.filename) #split filename and extension
+        image_fn = random_hex + f_ext #combine random hex and extension
+        image_path = os.path.join(app.config['UPLOAD_FOLDER'], image_fn) #combine root path and image path
+        image.save(image_path) #save image to path, save function is under the werkzeug library
+        return image_fn
+    
+    
+def delete_image(image):
+    image_path = os.path.join(app.config['UPLOAD_FOLDER'], image)
+    if os.path.exists(image_path) and image != "default_product.png":
+        os.remove(image_path)
 
 if __name__ == '__main__':
     app.run(debug=True)
