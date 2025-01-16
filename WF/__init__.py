@@ -204,7 +204,14 @@ def delete_account():
 def create_product():
     create_product = ProductForm(request.form)
     # create object of ProductForm class
+    
     if request.method == 'POST' and create_product.validate():
+        image = request.files['image']
+        if image:
+            saved_image = save_image(image)
+        else:
+            saved_image = "default_product.png"
+        
         product_dict = {}
         db = shelve.open('storage.db', 'c')
         
@@ -216,7 +223,7 @@ def create_product():
         except:
             print("Error in retrieving Products from storage.db")
         product = Product(create_product.name.data, create_product.description.data, create_product.qty.data, 
-                          create_product.selling_price.data, create_product.cost_price.data, create_product.in_stock.data)
+                          create_product.selling_price.data, create_product.cost_price.data, create_product.in_stock.data, saved_image)
         product_dict[product.get_product_id()] = product
         db['Products'] = product_dict
         db['ProductIDs'] = Product.product_id
@@ -225,6 +232,8 @@ def create_product():
         
         return redirect(url_for('product_management'))
     return render_template('create-product.html', form=create_product, title = "Create Product")
+
+
 
 @app.route('/product-management')
 def product_management():
@@ -253,12 +262,21 @@ def update_product(id):
         db = shelve.open('storage.db', 'w')
         products_dict = db['Products']
         product = products_dict.get(id)
+        
+        # if image is uploaded, save it
+        image = request.files['image']
+        if image:
+            saved_image = save_image(image)
+            delete_image(product.get_image())
+        else:
+            saved_image = product.get_image()
         product.set_name(update_product.name.data)
         product.set_description(update_product.description.data)
         product.set_qty(update_product.qty.data)
         product.set_selling_price(update_product.selling_price.data)
         product.set_cost_price(update_product.cost_price.data)
         product.set_in_stock(update_product.in_stock.data)
+        product.set_image(saved_image)
         db['Products'] = products_dict
         db.close()
         return redirect(url_for('product_management'))
@@ -272,6 +290,7 @@ def update_product(id):
         # populate form with existing data
         product = products_dict.get(id)
         update_product.name.data = product.get_name()
+        update_product.image.data = product.get_image()
         update_product.description.data = product.get_description()
         update_product.qty.data = product.get_qty()
         update_product.selling_price.data = product.get_selling_price()
@@ -279,19 +298,48 @@ def update_product(id):
         update_product.in_stock.data = product.get_in_stock()
         
         return render_template('update-product.html', form=update_product,
-                               title = "Update Product")
+                               title = "Update Product", product = product)
 @app.route('/delete-product/<int:id>', methods=['POST'])
 def delete_product(id):
     # stored variable id is passed from delete button @ product-management
     products_dict = {}
     db = shelve.open('storage.db', 'w')
     products_dict = db['Products']
+    
+    # Delete the image stored
+    product = products_dict.get(id)
+    delete_image(product.get_image())
+    
     products_dict.pop(id)
     db['Products'] = products_dict
     db.close()
     return redirect(url_for('product_management'))
 
+@app.route('/view-product/<int:id>', methods=['GET'])
+def view_product(id):
+    products_dict = {}
+    db = shelve.open('storage.db', 'r')
+    products_dict = db['Products']
+    db.close()
+    
+    product = products_dict.get(id)
+    return render_template('view-product.html', product=product, title = "View Product")
 
+## Helper functions ##
+# SAVE IMAGE #
+def save_image(image):
+        random_hex = secrets.token_hex(8) #randomize filename
+        f_name, f_ext = os.path.splitext(image.filename) #split filename and extension
+        image_fn = random_hex + f_ext #combine random hex and extension
+        image_path = os.path.join(app.config['UPLOAD_FOLDER'], image_fn) #combine root path and image path
+        image.save(image_path) #save image to path, save function is under the werkzeug library
+        return image_fn
+    
+    
+def delete_image(image):
+    image_path = os.path.join(app.config['UPLOAD_FOLDER'], image)
+    if os.path.exists(image_path) and image != "default_product.png":
+        os.remove(image_path)
 
 @app.route('/user_fwf', methods=['GET', 'POST'])
 def fwf_user():

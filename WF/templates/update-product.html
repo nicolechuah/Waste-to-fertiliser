@@ -6,7 +6,17 @@
 
 <h1 class="display-4">Update Product</h1>
 
-<form method="POST" action="">
+<form method="POST" action="" enctype="multipart/form-data" novalidate>
+
+    <div>
+        <p>Current Image</p>
+    </div>
+    <div><img src="{{ url_for('static', filename='images/' +  product.get_image()) }}" alt="{{ product.get_name() }}" 
+        style="width: 100px; height: 100px;"></div>
+    <div class="form-group">
+        {{ render_field(form.image, class="form-control") }}
+      </div>
+
     <div class="form-group">
         {{ render_field(form.name, class="form-control") }}
     </div>
