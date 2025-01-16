@@ -2,7 +2,7 @@ from wtforms import Form, StringField, IntegerField, FloatField, BooleanField, v
 from flask_wtf.file import FileField, FileAllowed
 
 class ProductForm(Form):
-    name = StringField('Product Name', [validators.Length(min=3, max=150, message="Product name must be 3-150 characters long"), validators.DataRequired
+    name = StringField('Product Name', [validators.Length(min=3, max=50, message="Product name must be 3-150 characters long"), validators.DataRequired
                                         (message="Please enter a product name.")])
     image = FileField('Product Image', validators=[FileAllowed(['jpg', 'png', 'jpeg'],message="Only jpg, jpeg, png files are allowed.")])
     description = StringField('Product Description', [validators.Length(min=1, max=1000), validators.DataRequired
