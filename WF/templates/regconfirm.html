@@ -3,32 +3,7 @@
 
 {% block content %}
 <h2>Event Registration Confirmation</h2>
-<p>Thank you for registering! You're all set to attend the event.</p>
-<h2>Your Event Registration Details</h2>
-<p>Here is the information we have for your event registration:</p>
+<h3>Thank you for registering! You're all set to attend the event.</h3>
+<h4>For more details or any changes we will contact you via email.</h4>
 
-<div>
-    <table class="table table-striped">
-        <thead>
-        <tr>
-            <th>First Name</th>
-            <th>Last Name</th>
-            <th>Gender</th>
-            <th>Email</th>
-            <th>Remarks</th>
-        </tr>
-        </thead>
-        <tbody>
-            <tr>
-                <td>{{ fwfuser.get_first_name() }}</td>
-                <td>{{ fwfuser.get_last_name() }}</td>
-                <td>{{ fwfuser.get_gender() }}</td>
-                <td>{{ fwfuser.get_email() }}</td>
-                <td>{{ fwfuser.get_remarks() }}</td>
-</td>
-
-            </tr>
-        </tbody>
-    </table>
-</div>
 {% endblock %}
