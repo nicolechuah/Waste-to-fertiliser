@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-5">
+    <h2>Payment</h2>
+    <form method="POST" action="{{ url_for('payment') }}">
+        {{ form.hidden_tag() }}
+        <div class="mb-3">
+            {{ form.cardholder_name.label(class="form-label") }}
+            {{ form.cardholder_name(class="form-control") }}
+            {% for error in form.cardholder_name.errors %}
+            <div class="text-danger">{{ error }}</div>
+            {% endfor %}
+        </div>
+        <div class="mb-3">
+            {{ form.card_number.label(class="form-label") }}
+            {{ form.card_number(class="form-control") }}
+            {% for error in form.card_number.errors %}
+            <div class="text-danger">{{ error }}</div>
+            {% endfor %}
+        </div>
+        <div class="mb-3">
+            {{ form.expiry_date.label(class="form-label") }}
+            {{ form.expiry_date(class="form-control") }}
+            {% for error in form.expiry_date.errors %}
+            <div class="text-danger">{{ error }}</div>
+            {% endfor %}
+        </div>
+        <div class="mb-3">
+            {{ form.cvv.label(class="form-label") }}
+            {{ form.cvv(class="form-control") }}
+            {% for error in form.cvv.errors %}
+            <div class="text-danger">{{ error }}</div>
+            {% endfor %}
+        </div>
+        <button type="submit" class="btn btn-success">Submit Payment</button>
+    </form>
+</div>
+{% endblock %}
