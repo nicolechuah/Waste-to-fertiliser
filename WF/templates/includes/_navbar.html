@@ -17,6 +17,11 @@
                         <li><a class="dropdown-item" href="/fwfuser_ADretrieve">Admin Retrieve Registration</a></li>
                     </ul>
       </li>
+      {% if session.get('is_admin') %}
+      <li class="nav-item">
+          <a class="nav-link" href="{{ url_for('manage_users') }}">Manage Users</a>
+      </li>
+      {% endif %}
     </ul>
     <ul class="navbar-nav">
       {% if session.get('logged_in') %}

@@ -1,3 +1,5 @@
 'Products', (0, 5)
 'FWFUser', (512, 211)
 'FWFUserIDs', (1024, 5)
+'Users', (1536, 274)
+'UserIDs', (2048, 5)

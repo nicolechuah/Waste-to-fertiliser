@@ -65,6 +65,8 @@ def register():
                 db.close()
                 flash('This email is already registered. Please use a different email.', 'danger')
                 return render_template('register.html', title='Register', form=form)
+            
+        is_admin = session.get('is_admin', False) and 'admin' in request.form
 
         user = User.User(
             user_id,
@@ -95,6 +97,7 @@ def login():
             if form.email.data == user.get_email() and form.password.data == user.get_password(): 
                 session['logged_in'] = True
                 session['username'] = user.get_username()
+                session['is_admin'] = user.is_admin()
                 flash('You have been logged in!', 'success')
                 return redirect(url_for('home'))
         
@@ -173,33 +176,58 @@ def account():
     db.close()
     return render_template("account.html", title="Account", form=form, user=current_user)
 
-@app.route("/account/delete", methods=['POST'])
-def delete_account():
-    db = shelve.open('storage.db', 'c')
-    users_dict = db.get('Users', {})
-    current_user_id = None
-
-    # Find the logged-in user
-    for user_id, user in users_dict.items():
-        if user.get_username() == session['username']:
-            current_user_id = user_id
-            break
-
-    if current_user_id:
-        # Remove user from the database
-        users_dict.pop(current_user_id, None)
-        db['Users'] = users_dict
-        db.close()
-
-        # Clear the session and redirect
-        session.pop('logged_in', None)
-        session.pop('username', None)
-        flash('Your account has been deleted.', 'info')
+@app.route("/delete_user/<int:user_id>", methods=['POST'])
+def delete_user(user_id):
+    if not session.get('is_admin', False):
+        flash('You do not have permission to access this page.', 'danger')
         return redirect(url_for('home'))
 
+    db = shelve.open('storage.db', 'c')
+    users_dict = db.get('Users', {})
+    user = users_dict.pop(user_id, None)
+    db['Users'] = users_dict
     db.close()
-    flash('Account deletion failed. Please try again.', 'danger')
-    return redirect(url_for('account'))
+
+    if user:
+        flash('User deleted successfully.', 'success')
+    else:
+        flash('User not found.', 'danger')
+
+    return redirect(url_for('manage_users'))
+
+@app.route("/edit_user/<int:user_id>", methods=['GET', 'POST'])
+def edit_user(user_id):
+    if not session.get('is_admin', False):
+        flash('You do not have permission to access this page.', 'danger')
+        return redirect(url_for('home'))
+
+    form = AccountForm()
+    db = shelve.open('storage.db', 'c')
+    users_dict = db.get('Users', {})
+    user = users_dict.get(user_id)
+
+    if not user:
+        db.close()
+        flash('User not found.', 'danger')
+        return redirect(url_for('manage_users'))
+
+    if form.validate_on_submit():
+        user.set_username(form.username.data)
+        user.set_email(form.email.data)
+        if form.password.data:
+            user.set_password(form.password.data)
+        users_dict[user_id] = user
+        db['Users'] = users_dict
+        db.close()
+        flash('User updated successfully!', 'success')
+        return redirect(url_for('manage_users'))
+
+    form.username.data = user.get_username()
+    form.email.data = user.get_email()
+    db.close()
+
+    return render_template('edit_user.html', form=form, user=user)
+
 @app.route('/create-product', methods=['GET', 'POST'])
 def create_product():
     create_product = ProductForm(request.form)
@@ -233,7 +261,44 @@ def create_product():
         return redirect(url_for('product_management'))
     return render_template('create-product.html', form=create_product, title = "Create Product")
 
+@app.route("/manageUsers", methods=['GET'])
+def manage_users():
+    if not session.get('is_admin', False):
+        flash('You do not have permission to access this page.', 'danger')
+        return redirect(url_for('home'))
 
+    db = shelve.open('storage.db', 'r')
+    users_dict = db.get('Users', {})
+    db.close()
+
+    return render_template('manageUsers.html', title="Manage Users", users=users_dict)
+
+@app.route("/create_admin", methods=["GET"])
+def create_admin():
+    db = shelve.open('storage.db', 'c')
+    users_dict = db.get('Users', {})
+    user_id = db.get('UserIDs', 0) + 1
+
+    # Check if an admin already exists
+    for user in users_dict.values():
+        if user.is_admin():
+            db.close()
+            return "Admin account already exists.", 400
+
+    # Create the initial admin account
+    admin = User.User(
+        user_id,
+        "admin",  # Username
+        "admin1@wf.com",  # Email
+        "12345",  # Password
+        is_admin=True  # Mark as admin
+    )
+    users_dict[user_id] = admin
+    db['Users'] = users_dict
+    db['UserIDs'] = user_id
+    db.close()
+
+    return "Admin account created successfully.", 200
 
 @app.route('/product-management')
 def product_management():
