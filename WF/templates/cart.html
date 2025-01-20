@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-5">
+    <!-- Flash Messages -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    {% if cart_items %}
+    <!-- Shopping Cart Table -->
+    <h2>Your Shopping Cart</h2>
+    <form method="POST" action="{{ url_for('cart') }}">
+        <table class="table table-bordered">
+            <thead>
+                <tr>
+                    <th>Product Name</th>
+                    <th>Unit Price</th>
+                    <th>Quantity</th>
+                    <th>Total Price</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for product in cart_items %}
+                <tr>
+                    <td>{{ product.name }}</td>
+                    <td>${{ "%.2f"|format(product.unit_price) }}</td>
+                    <td>
+                        <div class="input-group">
+                            <button type="submit" name="decrease" value="{{ product.name }}" class="btn btn-outline-success">-</button>
+                            <input type="text" name="quantity" value="{{ product.quantity }}" class="form-control text-center" readonly>
+                            <button type="submit" name="increase" value="{{ product.name }}" class="btn btn-outline-success">+</button>
+                        </div>
+                    </td>
+                    <td>${{ "%.2f"|format(product.total_price) }}</td>
+                    <td>
+                        <button type="submit" name="remove" value="{{ product.name }}" class="btn btn-danger">Remove</button>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+            <tfoot>
+                <tr>
+                    <td colspan="3" class="text-end"><strong>Overall Price:</strong></td>
+                    <td colspan="2"><strong>${{ "%.2f"|format(overall_price) }}</strong></td>
+                </tr>
+            </tfoot>
+        </table>
+    </form>
+
+    <!-- Checkout Button -->
+    <div class="text-end">
+        <a href="{{ url_for('checkout') }}" class="btn btn-primary">Checkout</a>
+    </div>
+    {% else %}
+    <!-- Empty Cart Message -->
+    <div class="text-center">
+        <h2>Your Shopping Cart is Empty</h2>
+        <p class="mt-3">Looks like you haven't added anything to your cart yet.</p>
+        <a href="{{ url_for('products') }}" class="btn btn-primary mt-4">View Products</a>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

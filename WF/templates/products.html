@@ -1,0 +1,49 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container mt-4">
+    <!-- Flash Messages -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+    
+    <h1>Our Products</h1>
+    <div class="row">
+        <!-- Organic Home Gardeners’ Fertilizer -->
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Organic Home Gardeners’ Fertilizer (100g, S)</h5>
+                    <p class="card-text">Price: $1.00</p>
+                    <form method="POST">
+                        <input type="hidden" name="product_name" value="Organic Home Gardeners’ Fertilizer (100g, S)">
+                        <input type="hidden" name="unit_price" value="1.00">
+                        <button type="submit" class="btn btn-success">Add to Cart</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Potage Based Home Garden Fertilizer -->
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Potage Based Home Garden Fertilizer (300g, S)</h5>
+                    <p class="card-text">Price: $1.80</p>
+                    <form method="POST">
+                        <input type="hidden" name="product_name" value="Potage Based Home Garden Fertilizer (300g, S)">
+                        <input type="hidden" name="unit_price" value="1.80">
+                        <button type="submit" class="btn btn-success">Add to Cart</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

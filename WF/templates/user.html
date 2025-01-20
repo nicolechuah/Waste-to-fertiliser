@@ -1,0 +1,94 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-5">
+    <h1>User Data</h1>
+
+    <!-- Track Your Order Section -->
+    <div class="mt-4">
+        <h3>Track Your Order</h3>
+        <table class="table table-bordered">
+            <thead>
+                <tr>
+                    <th>Product Name</th>
+                    <th>Unit Price</th>
+                    <th>Quantity</th>
+                    <th>Total Price</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for order in complete_data %}
+                <tr>
+                    <td>{{ order.name }}</td>
+                    <td>${{ "%.2f"|format(order.unit_price) }}</td>
+                    <td>{{ order.quantity }}</td>
+                    <td>${{ "%.2f"|format(order.total_price) }}</td>
+                    <td>In Progress</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- View Delivery Details Section -->
+    <div class="mt-4">
+        <h3>View Delivery Details</h3>
+        <table class="table table-bordered">
+            <thead>
+                <tr>
+                    <th>Full Name</th>
+                    <th>Phone Number</th>
+                    <th>Postal Code</th>
+                    <th>Address</th>
+                    <th>Unit Number</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for delivery in delivery_data %}
+                <tr>
+                    <td>{{ delivery.full_name }}</td>
+                    <td>{{ delivery.phone_number }}</td>
+                    <td>{{ delivery.postal_code }}</td>
+                    <td>{{ delivery.address }}</td>
+                    <td>{{ delivery.unit_number or 'N/A' }}</td>
+                    <td>
+                        <a href="{{ url_for('edit_delivery', id=loop.index0) }}" class="btn btn-warning">Edit</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- View Payment Details Section -->
+    <div class="mt-4">
+        <h3>View Payment Details</h3>
+        <table class="table table-bordered">
+            <thead>
+                <tr>
+                    <th>Cardholder Name</th>
+                    <th>Card Number</th>
+                    <th>Expiry Date</th>
+                    <th>CVV</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for payment in payment_data %}
+                <tr>
+                    <td>{{ payment.cardholder_name }}</td>
+                    <td>{{ payment.card_number }}</td>
+                    <td>{{ payment.expiry_date }}</td>
+                    <td>{{ payment.cvv }}</td>
+                    <td>
+                        <a href="{{ url_for('edit_payment', id=loop.index0) }}" class="btn btn-warning">Edit</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
