@@ -1,5 +1,5 @@
 from flask import Flask, render_template, url_for, flash, redirect, request, session
-from Forms import RegistrationForm, LoginForm, AccountForm, ProductForm, UserFWF
+from forms import RegistrationForm, LoginForm, AccountForm, ProductForm, UserFWF
 from flask_bcrypt import Bcrypt
 from flask_login import login_user, current_user, logout_user, login_required
 import shelve, User
@@ -418,7 +418,7 @@ def create_product():
         except:
             print("Error in retrieving Products from storage.db")
         product = Product(create_product.name.data, create_product.description.data, create_product.qty.data, 
-                          create_product.selling_price.data, create_product.cost_price.data, create_product.in_stock.data, saved_image)
+                          create_product.selling_price.data, create_product.cost_price.data, create_product.visible.data, saved_image)
         product_dict[product.get_product_id()] = product
         db['Products'] = product_dict
         db['ProductIDs'] = Product.product_id
@@ -470,7 +470,7 @@ def update_product(id):
         product.set_qty(update_product.qty.data)
         product.set_selling_price(update_product.selling_price.data)
         product.set_cost_price(update_product.cost_price.data)
-        product.set_in_stock(update_product.in_stock.data)
+        product.set_visible(update_product.visible.data)
         product.set_image(saved_image)
         db['Products'] = products_dict
         db.close()
@@ -490,7 +490,7 @@ def update_product(id):
         update_product.qty.data = product.get_qty()
         update_product.selling_price.data = product.get_selling_price()
         update_product.cost_price.data = product.get_cost_price()
-        update_product.in_stock.data = product.get_in_stock()
+        update_product.visible.data = product.get_visible()
         
         return render_template('update-product.html', form=update_product,
                                title = "Update Product", product = product)
