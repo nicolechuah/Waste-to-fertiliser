@@ -1,23 +1,26 @@
 from flask import Flask, render_template, url_for, flash, redirect, request, session
-from AllForms import RegistrationForm, LoginForm, AccountForm, ProductForm, UserFWF, CheckoutForm, PaymentForm
+from AllForms import RegistrationForm, LoginForm, AccountForm, ProductForm, UserFWF, CheckoutForm, PaymentForm, ReviewForm
 from flask_bcrypt import Bcrypt
-from flask_login import login_user, current_user, logout_user, login_required
+from flask_login import login_user, current_user, logout_user, login_required, LoginManager
+
 import shelve, User
 from PIL import Image
 from werkzeug.utils import secure_filename
 import os
 import secrets
 from Product import Product
+from Review import Review
 import shelve
 from Fwfuser import FWFUser
 
 
-app = Flask(__name__)
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'd6691973382147ed2b8724aa19eb0720'
 app.config['UPLOAD_FOLDER'] = 'static/images'
 app.secret_key = 'secret_key_for_flash_messages'  # Required for flash messages and WTForms
+
+
 
 def get_storage():
     return shelve.open('storage', writeback=True)
@@ -392,6 +395,8 @@ def delete_account():
     db.close()
     flash('Account deletion failed. Please try again.', 'danger')
     return redirect(url_for('account'))
+
+
 @app.route('/create-product', methods=['GET', 'POST'])
 def create_product():
     create_product = ProductForm(request.form)
@@ -421,7 +426,7 @@ def create_product():
         db['ProductIDs'] = Product.product_id
         db.close()
         print(product)
-        
+        flash(f'Product {create_product.name.data} created!', 'success')
         return redirect(url_for('product_management'))
     return render_template('create-product.html', form=create_product, title = "Create Product")
 
@@ -471,6 +476,7 @@ def update_product(id):
         product.set_image(saved_image)
         db['Products'] = products_dict
         db.close()
+        flash(f'Product {update_product.name.data} updated!', 'success')
         return redirect(url_for('product_management'))
     else: # for the get request - preload the page with existing details
           # idk why but theres type error if i dont fill it?
@@ -505,17 +511,46 @@ def delete_product(id):
     products_dict.pop(id)
     db['Products'] = products_dict
     db.close()
+    flash(f'Product deleted!', 'success')
     return redirect(url_for('product_management'))
 
-@app.route('/view-product/<int:id>', methods=['GET'])
+@app.route('/view-product/<int:id>', methods=['GET', 'POST'])
 def view_product(id):
     products_dict = {}
+    reviews_dict = {}
     db = shelve.open('storage.db', 'r')
     products_dict = db['Products']
+    reviews_dict = db['Reviews']
     db.close()
-    
     product = products_dict.get(id)
-    return render_template('view-product.html', product=product, title = "View Product")
+    review_list = []
+    for review in reviews_dict.values():
+        if review.get_product_id() == id:
+            review_list.append(review)
+    review_form = ReviewForm()
+    if request.method == 'POST' and review_form.validate():
+        author = session['username']
+        rating = review_form.rating.data
+        comment = review_form.comment.data
+        product_id = id
+        review_dict = {}
+        db = shelve.open('storage.db', 'c')
+        try:
+            review_dict = db['Reviews']
+            review_id = db['ReviewIDs']
+            Review.review_id = review_id
+        except:
+            print("Error in retrieving Reviews from storage.db")
+        review = Review(author, rating, comment, product_id)
+        review_dict[review.get_review_id()] = review
+        db['Reviews'] = review_dict
+        db['ReviewIDs'] = Review.review_id
+        db.close()
+        print(review)
+        flash('Review submitted!', 'success')
+        return redirect(url_for('view_product', id=id))
+    return render_template('view-product.html', product=product, title = "View Product",
+                           review_form=review_form, review_list=review_list)
 
 
 @app.route('/user_fwf', methods=['GET', 'POST'])
