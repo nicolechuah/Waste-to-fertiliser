@@ -10,6 +10,7 @@ import secrets
 from Product import Product
 import shelve
 from Fwfuser import FWFUser
+from Collect import Collect
 
 
 app = Flask(__name__)
@@ -677,5 +678,109 @@ def delete_image(image):
     if os.path.exists(image_path) and image != "default_product.png":
         os.remove(image_path)
 
+@app.route('/collectformR')
+def message():
+    return render_template('collectformR.html')
+
+@app.route('/collectfood', methods=['GET', 'POST'])
+def collect_food():
+    cf_form= CollectFood(request.form)
+    if request.method == 'POST' and cf_form.validate():
+        collect_dict = {}
+        db = shelve.open('storage.db', 'c')
+
+        try:
+            collect_dict = db['Collectusers']
+            collect_id = db['CollectusersIDs']
+            Collect.count_id= collect_id
+
+        except:
+            print("Error in retrieving data.")
+        CollectUser = Collect(cf_form.name.data, cf_form.email.data,
+                                  cf_form.type.data,cf_form.method.data, cf_form.address.data, cf_form.time.data )
+        collect_dict[CollectUser.get_collect_id()] = CollectUser
+        db['Collectusers'] = collect_dict
+        db['CollectusersIDs'] = Collect.count_id
+        db.close()
+
+        return redirect(url_for('message'))
+
+    return render_template('collectfood.html', form=cf_form)
+
+@app.route('/Rcollect_Admin', methods=['GET'])
+def Ad_collect():
+    Admincollect_dict ={}
+    try:
+        db = shelve.open('storage.db', 'r')
+    except:
+        print("Error in retrieving data from storage.db")
+        db = shelve.open('storage.db', 'c')
+        db['Collectusers'] = {}
+
+    Admincollect_dict = db['Collectusers']
+    db.close()
+    partners_list = []
+    for key in Admincollect_dict:
+        partner = Admincollect_dict.get(key)
+        partners_list.append(partner)
+
+    return render_template('Rcollect_Admin.html', count=len(partners_list), partners_list=partners_list)
+
+
+@app.route('/Editpartner/<int:id>/', methods=['GET', 'POST'])
+def edit_partner(id):
+    edit_partner_form = CollectFood(request.form)
+
+    if request.method == 'POST' and edit_partner_form.validate():
+        # Open shelve in write mode
+        db = shelve.open('storage.db', 'w')
+        partner_dict = db.get('Collectusers', {})
+
+        partner = partner_dict.get(id)
+
+        if partner:
+            partner.set_name(edit_partner_form.name.data)
+            partner.set_email(edit_partner_form.email.data)
+            partner.set_type(edit_partner_form.type.data)
+            partner.set_method(edit_partner_form.method.data)
+            partner.set_address(edit_partner_form.address.data)
+            partner.set_time(edit_partner_form.time.data)
+
+            # Save updated data
+            db['Collectusers'] = partner_dict
+
+        db.close()
+
+        # Redirect to admin page after successful update
+        return redirect(url_for('Ad_collect'))
+
+    else:
+        # Open shelve in read mode
+        db = shelve.open('storage.db', 'r')
+        partner_dict = db.get('Collectusers', {})
+        db.close()
+
+        # Retrieve the partner by ID
+        partner = partner_dict.get(id)
+
+        if not partner:
+            # Handle case where partner is not found
+            return "Partner not found", 404
+
+        # Populate the form with partner data
+        edit_partner_form.name.data = partner.get_name()
+        edit_partner_form.email.data = partner.get_email()
+        edit_partner_form.type.data = partner.get_type()
+        edit_partner_form.method.data = partner.get_method()
+        edit_partner_form.address.data = partner.get_address()
+        edit_partner_form.time.data = partner.get_time()
+
+    # Render the edit form
+    return render_template('Editpartner.html', form=edit_partner_form, partner=partner)
+
 if __name__ == '__main__':
     app.run(debug=True)
+
+
+
+
