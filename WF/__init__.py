@@ -310,7 +310,11 @@ def account():
     form = AccountForm()
     users_dict = {}
     db = shelve.open('storage.db', 'c')
-    users_dict = db['Users']
+    try:
+        users_dict = db['Users']
+    except:
+        print("Error in retrieving Users from storage.db")
+        db['Users'] = {}
 
     current_user_id = None
     current_user = None
@@ -420,6 +424,7 @@ def create_product():
             
         except:
             print("Error in retrieving Products from storage.db")
+            db['Products'] = {}
         product = Product(create_product.name.data, create_product.description.data, create_product.qty.data, 
                           create_product.selling_price.data, create_product.cost_price.data, create_product.visible.data, saved_image)
         product_dict[product.get_product_id()] = product
@@ -536,7 +541,10 @@ def view_product(id):
             review_list.append(review)
     review_form = ReviewForm()
     if request.method == 'POST' and review_form.validate():
-        author = session['username']
+        try:
+            author = session['username']
+        except:
+            author = "Anonymous"
         rating = review_form.rating.data
         comment = review_form.comment.data
         date = datetime.today().strftime('%Y-%m-%d')
