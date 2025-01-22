@@ -531,8 +531,6 @@ def view_product(id):
     except:
         db['Reviews'] = {}
         reviews_dict = db['Reviews']
-        db['Products'] = {}
-        products_dict = db['Products']
     db.close()
     product = products_dict.get(id)
     review_list = []
@@ -1252,6 +1250,7 @@ def view_product(id):
     
     product = products_dict.get(id)
     return render_template('view-product.html', product=product, title = "View Product")
+
 
 
 @app.route('/user_fwf', methods=['GET', 'POST'])
