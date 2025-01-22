@@ -765,6 +765,7 @@ def Ad_collect():
     return render_template('Rcollect_Admin.html', count=len(partners_list), partners_list=partners_list)
 
 
+
 @app.route('/Editpartner/<int:id>/', methods=['GET', 'POST'])
 def edit_partner(id):
     edit_partner_form = CollectFood(request.form)
