@@ -532,8 +532,6 @@ def view_product(id):
     except:
         db['Reviews'] = {}
         reviews_dict = db['Reviews']
-        db['Products'] = {}
-        products_dict = db['Products']
     db.close()
     product = products_dict.get(id)
     review_list = []
