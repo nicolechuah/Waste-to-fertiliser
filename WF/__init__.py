@@ -5,6 +5,7 @@ from flask_login import login_user, current_user, logout_user, login_required, L
 
 import shelve, User
 from PIL import Image
+from datetime import datetime
 from werkzeug.utils import secure_filename
 import os
 import secrets
@@ -518,9 +519,15 @@ def delete_product(id):
 def view_product(id):
     products_dict = {}
     reviews_dict = {}
-    db = shelve.open('storage.db', 'r')
-    products_dict = db['Products']
-    reviews_dict = db['Reviews']
+    db = shelve.open('storage.db', 'c')
+    try:
+        products_dict = db['Products']
+        reviews_dict = db['Reviews']
+    except:
+        db['Reviews'] = {}
+        reviews_dict = db['Reviews']
+        db['Products'] = {}
+        products_dict = db['Products']
     db.close()
     product = products_dict.get(id)
     review_list = []
@@ -532,6 +539,7 @@ def view_product(id):
         author = session['username']
         rating = review_form.rating.data
         comment = review_form.comment.data
+        date = datetime.today().strftime('%Y-%m-%d')
         product_id = id
         review_dict = {}
         db = shelve.open('storage.db', 'c')
@@ -541,16 +549,19 @@ def view_product(id):
             Review.review_id = review_id
         except:
             print("Error in retrieving Reviews from storage.db")
-        review = Review(author, rating, comment, product_id)
+        review = Review(author, rating, comment, product_id,date)
         review_dict[review.get_review_id()] = review
         db['Reviews'] = review_dict
         db['ReviewIDs'] = Review.review_id
         db.close()
         print(review)
         flash('Review submitted!', 'success')
-        return redirect(url_for('view_product', id=id))
+        return redirect(url_for('view_product',_anchor='reviews', id=id))
     return render_template('view-product.html', product=product, title = "View Product",
                            review_form=review_form, review_list=review_list)
+    
+    
+
 
 
 @app.route('/user_fwf', methods=['GET', 'POST'])

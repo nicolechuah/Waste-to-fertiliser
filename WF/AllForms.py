@@ -44,7 +44,7 @@ class ProductForm(Form):
     visible = BooleanField('Visible', [validators.Optional()], default=True)
 
 class ReviewForm(FlaskForm):
-    rating = IntegerField('Rating', [validators.NumberRange(min=1, max=5), validators.DataRequired()])
+    rating = HiddenField('Rating', [validators.DataRequired()])
     comment = TextAreaField('Comment', [validators.Length(min=1, max=500), validators.optional()])
 
 class UserFWF(Form):

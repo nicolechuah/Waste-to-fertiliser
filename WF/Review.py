@@ -1,12 +1,13 @@
 class Review:
     review_id = 0
-    def __init__(self, author, rating, comment, product_id):
+    def __init__(self, author, rating, comment, product_id, date):
         Review.review_id += 1
         self.__review_id = Review.review_id
         self.__author = author
         self.__rating = rating
         self.__comment = comment
         self.__product_id = product_id
+        self.__date = date
         
     def get_review_id(self):
         return self.__review_id
@@ -23,6 +24,9 @@ class Review:
     def get_product_id(self):
         return self.__product_id
     
+    def get_date(self):
+        return self.__date
+    
     def set_rating(self, rating):
         self.__rating = rating
         
@@ -34,6 +38,9 @@ class Review:
         
     def set_product_id(self, product_id):
         self.__product_id = product_id
+
+    def set_date(self, date):
+        self.__date = date
 
     def __str__(self):
         return f"Author: {self.__author}, Rating: {self.__rating}, Comment: {self.__comment} Product ID: {self.__product_id}"
