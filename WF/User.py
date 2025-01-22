@@ -1,10 +1,11 @@
 class User:
-    def __init__(self, user_id, username, email, password, profile_picture='default_user.jpg'):
+    def __init__(self, user_id, username, email, password, profile_picture='default.jpg', is_admin=False):
         self.__user_id = user_id
         self.__username = username
         self.__email = email
         self.__password = password
         self.__profile_picture = profile_picture
+        self.__is_admin = is_admin
 
     def get_user_id(self):
         return self.__user_id
@@ -16,6 +17,8 @@ class User:
         return self.__password
     def get_profile_picture(self):
         return self.__profile_picture
+    def is_admin(self):
+        return self.__is_admin
 
     def set_user_id(self, user_id):
         self.__user_id = user_id
@@ -27,3 +30,5 @@ class User:
         self.__password = password
     def set_profile_picture(self, profile_picture):
         self.__profile_picture = profile_picture
+    def set_admin(self, is_admin):
+        self.__is_admin = is_admin
