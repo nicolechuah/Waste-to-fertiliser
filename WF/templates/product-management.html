@@ -16,6 +16,9 @@
         	<th><h4>Description</h4></th>
         	<th><h4>Selling Price</h4></th>
         	<th><h4>Cost Price</h4></th>
+			<th>
+				<h4>Visible</h4>
+			</th>
     	</tr>
     </thead>
     <tbody>
@@ -29,6 +32,13 @@
         	<td>{{product.get_description()}}</td>
         	<td>{{product.get_selling_price()}}</td>
         	<td>{{product.get_cost_price()}}</td>
+			<td>
+				{% if product.get_visible() %}
+					Yes
+				{% else %}
+					No
+				{% endif %}
+			</td>
         	<td>
 				<div class="btn-group gap-2">
 					<a href="/update-product/{{product.get_product_id()}}" 

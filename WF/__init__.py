@@ -1,24 +1,28 @@
 from flask import Flask, render_template, url_for, flash, redirect, request, session
-from AllForms import RegistrationForm, LoginForm, AccountForm, ProductForm, UserFWF, CheckoutForm, PaymentForm,CollectFood
+from AllForms import RegistrationForm, LoginForm, AccountForm, ProductForm, UserFWF, CheckoutForm, PaymentForm
+from AllForms import CollectFood,ReviewForm
 from flask_bcrypt import Bcrypt
-from flask_login import login_user, current_user, logout_user, login_required
+from flask_login import login_user, current_user, logout_user, login_required, LoginManager
+
 import shelve, User
 from PIL import Image
+from datetime import datetime
 from werkzeug.utils import secure_filename
 import os
 import secrets
 from Product import Product
+from Review import Review
 import shelve
 from Fwfuser import FWFUser
 from Collect import Collect
 
 
 app = Flask(__name__)
-
-app = Flask(__name__)
 app.config['SECRET_KEY'] = 'd6691973382147ed2b8724aa19eb0720'
 app.config['UPLOAD_FOLDER'] = 'static/images'
 app.secret_key = 'secret_key_for_flash_messages'  # Required for flash messages and WTForms
+
+
 
 def get_storage():
     return shelve.open('storage', writeback=True)
@@ -310,7 +314,11 @@ def account():
     form = AccountForm()
     users_dict = {}
     db = shelve.open('storage.db', 'c')
-    users_dict = db['Users']
+    try:
+        users_dict = db['Users']
+    except:
+        print("Error in retrieving Users from storage.db")
+        db['Users'] = {}
 
     current_user_id = None
     current_user = None
@@ -418,9 +426,8 @@ def edit_user(user_id):
     form.username.data = user.get_username()
     form.email.data = user.get_email()
     db.close()
-
-    return render_template('edit_user.html', form=form, user=user)
-
+    flash('Account deletion failed. Please try again.', 'danger')
+    return redirect(url_for('account'))
 @app.route('/create-product', methods=['GET', 'POST'])
 def create_product():
     create_product = ProductForm(request.form)
@@ -443,6 +450,7 @@ def create_product():
             
         except:
             print("Error in retrieving Products from storage.db")
+            db['Products'] = {}
         product = Product(create_product.name.data, create_product.description.data, create_product.qty.data, 
                           create_product.selling_price.data, create_product.cost_price.data, create_product.visible.data, saved_image)
         product_dict[product.get_product_id()] = product
@@ -450,7 +458,7 @@ def create_product():
         db['ProductIDs'] = Product.product_id
         db.close()
         print(product)
-        
+        flash(f'Product {create_product.name.data} created!', 'success')
         return redirect(url_for('product_management'))
     return render_template('create-product.html', form=create_product, title = "Create Product")
 
@@ -537,6 +545,7 @@ def update_product(id):
         product.set_image(saved_image)
         db['Products'] = products_dict
         db.close()
+        flash(f'Product {update_product.name.data} updated!', 'success')
         return redirect(url_for('product_management'))
     else: # for the get request - preload the page with existing details
           # idk why but theres type error if i dont fill it?
@@ -571,17 +580,57 @@ def delete_product(id):
     products_dict.pop(id)
     db['Products'] = products_dict
     db.close()
+    flash(f'Product deleted!', 'success')
     return redirect(url_for('product_management'))
 
-@app.route('/view-product/<int:id>', methods=['GET'])
+@app.route('/view-product/<int:id>', methods=['GET', 'POST'])
 def view_product(id):
     products_dict = {}
-    db = shelve.open('storage.db', 'r')
-    products_dict = db['Products']
+    reviews_dict = {}
+    db = shelve.open('storage.db', 'c')
+    try:
+        products_dict = db['Products']
+        reviews_dict = db['Reviews']
+    except:
+        db['Reviews'] = {}
+        reviews_dict = db['Reviews']
     db.close()
-    
     product = products_dict.get(id)
-    return render_template('view-product.html', product=product, title = "View Product")
+    review_list = []
+    for review in reviews_dict.values():
+        if review.get_product_id() == id:
+            review_list.append(review)
+    review_form = ReviewForm()
+    if request.method == 'POST' and review_form.validate():
+        try:
+            author = session['username']
+        except:
+            author = "Anonymous"
+        rating = review_form.rating.data
+        comment = review_form.comment.data
+        date = datetime.today().strftime('%Y-%m-%d')
+        product_id = id
+        review_dict = {}
+        db = shelve.open('storage.db', 'c')
+        try:
+            review_dict = db['Reviews']
+            review_id = db['ReviewIDs']
+            Review.review_id = review_id
+        except:
+            print("Error in retrieving Reviews from storage.db")
+        review = Review(author, rating, comment, product_id,date)
+        review_dict[review.get_review_id()] = review
+        db['Reviews'] = review_dict
+        db['ReviewIDs'] = Review.review_id
+        db.close()
+        print(review)
+        flash('Review submitted!', 'success')
+        return redirect(url_for('view_product',_anchor='reviews', id=id))
+    return render_template('view-product.html', product=product, title = "View Product",
+                           review_form=review_form, review_list=review_list)
+    
+    
+
 
 
 @app.route('/user_fwf', methods=['GET', 'POST'])
@@ -727,22 +776,6 @@ def fwfuser_ADretrieve():
 
     return render_template('fwfuser_ADretrieve.html', count=len(fwfusers_list), fwfusers_list=fwfusers_list)
 
-## Helper functions ##
-# SAVE IMAGE #
-def save_image(image):
-        random_hex = secrets.token_hex(8) #randomize filename
-        f_name, f_ext = os.path.splitext(image.filename) #split filename and extension
-        image_fn = random_hex + f_ext #combine random hex and extension
-        image_path = os.path.join(app.config['UPLOAD_FOLDER'], image_fn) #combine root path and image path
-        image.save(image_path) #save image to path, save function is under the werkzeug library
-        return image_fn
-    
-    
-def delete_image(image):
-    image_path = os.path.join(app.config['UPLOAD_FOLDER'], image)
-    if os.path.exists(image_path) and image != "default_product.png":
-        os.remove(image_path)
-
 @app.route('/collectformR')
 def message():
     return render_template('collectformR.html')
@@ -790,6 +823,7 @@ def Ad_collect():
         partners_list.append(partner)
 
     return render_template('Rcollect_Admin.html', count=len(partners_list), partners_list=partners_list)
+
 
 
 @app.route('/Editpartner/<int:id>/', methods=['GET', 'POST'])
@@ -842,10 +876,24 @@ def edit_partner(id):
 
     # Render the edit form
     return render_template('Editpartner.html', form=edit_partner_form, partner=partner)
+## Helper functions ##
+# SAVE IMAGE #
+def save_image(image):
+        random_hex = secrets.token_hex(8) #randomize filename
+        f_name, f_ext = os.path.splitext(image.filename) #split filename and extension
+        image_fn = random_hex + f_ext #combine random hex and extension
+        image_path = os.path.join(app.config['UPLOAD_FOLDER'], image_fn) #combine root path and image path
+        image.save(image_path) #save image to path, save function is under the werkzeug library
+        return image_fn
+    
+    
+def delete_image(image):
+    image_path = os.path.join(app.config['UPLOAD_FOLDER'], image)
+    if os.path.exists(image_path) and image != "default_product.png":
+        os.remove(image_path)
 
 if __name__ == '__main__':
     app.run(debug=True)
-
 
 
 

@@ -11,7 +11,8 @@ class Product():
         self.__cost_price = cost_price
         self.__visible = visible
         self.__image = image
-        
+
+    
     def get_product_id(self):
         return self.__product_id
     
@@ -56,6 +57,7 @@ class Product():
         
     def set_image(self, image):
         self.__image = image
+
         
     def __str__(self):
         return f"Product ID: {self.__product_id}, Name: {self.__name}, Image: {self.__image}, Visible: {self.__visible}"
