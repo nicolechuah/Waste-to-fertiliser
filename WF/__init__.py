@@ -426,9 +426,8 @@ def edit_user(user_id):
     form.username.data = user.get_username()
     form.email.data = user.get_email()
     db.close()
-
-    return render_template('edit_user.html', form=form, user=user)
-
+    flash('Account deletion failed. Please try again.', 'danger')
+    return redirect(url_for('account'))
 @app.route('/create-product', methods=['GET', 'POST'])
 def create_product():
     create_product = ProductForm(request.form)

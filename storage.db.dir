@@ -4,3 +4,5 @@
 'CollectusersIDs', (1536, 5)
 'FWFUser', (2048, 216)
 'FWFUserIDs', (2560, 5)
+'Users', (4096, 276)
+'UserIDs', (4608, 5)
