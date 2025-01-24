@@ -11,18 +11,18 @@ from Product import Product
 import shelve
 from Fwfuser import FWFUser
 
-
 app = Flask(__name__)
 
-app = Flask(__name__)
 app.config['SECRET_KEY'] = 'd6691973382147ed2b8724aa19eb0720'
 app.config['UPLOAD_FOLDER'] = 'static/images'
 app.secret_key = 'secret_key_for_flash_messages'  # Required for flash messages and WTForms
 
-def get_storage():
-    return shelve.open('storage', writeback=True)
+DB_FILE_PATH = os.path.join(os.path.dirname(__file__), 'storage.db')
 
-@app.route('/')
+def get_storage():
+    return shelve.open(DB_FILE_PATH, writeback=True)
+
+@app.route('/', methods=['GET', 'POST'])
 def home():
     try:
         db = shelve.open('storage.db', 'r')
@@ -38,6 +38,38 @@ def home():
         product = products_dict.get(key)
         products_list.append(product)
 
+    if request.method == 'POST':
+        product_name = request.form.get('product_name')
+        unit_price = float(request.form.get('unit_price', 0))
+
+        if product_name:
+            try:
+                quantity = 1
+                with get_storage() as db:
+                    if 'cart' not in db:
+                        db['cart'] = {'items': []}
+
+                    cart_items = db['cart']['items']
+
+                    for item in cart_items:
+                        if item['name'] == product_name:
+                            item['quantity'] += quantity
+                            item['total_price'] = item['unit_price'] * item['quantity']
+                            break
+                    else:
+                        cart_items.append({
+                            'name': product_name,
+                            'unit_price': unit_price,
+                            'quantity': quantity,
+                            'total_price': unit_price * quantity
+                        })
+
+                    db['cart']['items'] = cart_items
+                    db.sync()
+                flash(f"{product_name} successfully added to cart!", 'success')
+            except Exception as e:
+                flash(f"Error adding product to cart: {e}", 'danger')
+
     return render_template('home.html', products_list=products_list, title="Home")
 
 @app.route('/products', methods=['GET', 'POST'])
@@ -52,7 +84,7 @@ def products():
                 with get_storage() as db:
                     if 'cart' not in db:
                         db['cart'] = {'items': []}
-                    
+
                     cart_items = db['cart']['items']
 
                     for item in cart_items:
@@ -226,7 +258,7 @@ def edit_payment(id):
         form.expiry_date.data = payment_data[id]['expiry_date']
         form.cvv.data = payment_data[id]['cvv']
 
-    return render_template('payment.html', form=form, title="Edit Payment Details")
+    return render_template('home.html', form=form, title="Edit Payment Details")
 
 
 @app.route('/help')

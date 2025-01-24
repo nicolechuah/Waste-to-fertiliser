@@ -4,31 +4,30 @@
 
 
 
-
-<h1 class = "mx-auto" style="width: 250px">Our Products</h1>
-    <div class="d-flex flex-wrap justify-content-start custom-container" id="products">
+<h1 class="mx-auto" style="width: 250px">Our Products</h1>
+<div class="d-flex flex-wrap justify-content-start custom-container" id="products">
     {% for product in products_list %}
     <div class="product-wrapper" border="1">
         <div class="card p-3" style="width: 16rem; height: 25rem;">
             <a href="{{url_for('view_product', id = product.get_product_id())}}">
-            <img src="{{ url_for('static', filename='images/' +  product.get_image()) }}" 
-				alt="{{ product.get_name() }}" class = "card-img-top product-list-image">
-            <div class="card-body text-left">
-                
-            <h5 class="card-title">{{product.get_name()}}</h5>
-            <p class="card-text pb-2">{{product.get_selling_price()}}</p>
-            </div>
+                <img src="{{ url_for('static', filename='images/' +  product.get_image()) }}" 
+                    alt="{{ product.get_name() }}" class="card-img-top product-list-image">
+                <div class="card-body text-left">
+                    <h5 class="card-title">{{product.get_name()}}</h5>
+                    <p class="card-text pb-2">Price: ${{product.get_selling_price()}}</p>
+                </div>
             </a>
             <div class="d-flex align-items-center">
-                <a href="#" class="btn btn-primary me-1">Add to cart</a>
-                <a href="#" class="btn btn-secondary me-1">Buy now</a>
+                <form method="POST">
+                    <input type="hidden" name="product_name" value="{{ product.get_name() }}">
+                    <input type="hidden" name="unit_price" value="{{ product.get_selling_price() }}">
+                    <button type="submit" class="btn btn-success me-1">Add to Cart</button>
+                </form>
+                <a href="#" class="btn btn-secondary me-1">Buy Now</a>
             </div>
         </div>
     </div>
-
     {% endfor %}
-    </div>
+</div>
 
-    
 {% endblock %}
-
