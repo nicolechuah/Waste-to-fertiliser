@@ -1,6 +1,6 @@
 from flask import Flask, render_template, url_for, flash, redirect, request, session
 from AllForms import RegistrationForm, LoginForm, AccountForm, ProductForm, UserFWF, CheckoutForm, PaymentForm
-from AllForms import CollectFood,ReviewForm
+from AllForms import CollectFood,ReviewForm, InventoryForm
 from flask_bcrypt import Bcrypt
 from flask_login import login_user, current_user, logout_user, login_required, LoginManager
 
@@ -457,6 +457,25 @@ def product_management():
         products_list.append(product)
     return render_template('product-management.html', products_list=products_list, title = "Manage Products")
 
+@app.route('/inventory', methods = ['GET', 'POST'])
+def inventory():
+    products_dict = {}
+    inventory_form = InventoryForm(request.form)
+    try:
+        db = shelve.open('storage.db', 'r')
+    except:
+        print("Error in retrieving data from storage.db")
+        db = shelve.open('storage.db', 'c')
+        db['Products'] = {}
+    products_dict = db['Products']
+    db.close()
+    
+    products_list = []
+    for key in products_dict:
+        product = products_dict.get(key)
+        products_list.append(product)
+    return render_template('inventory.html', products_list=products_list, form=inventory_form, title = "Inventory")
+
 @app.route('/update-product/<int:id>/', methods=['POST', 'GET'])
 def update_product(id):
     update_product = ProductForm(request.form)
@@ -567,7 +586,7 @@ def view_product(id):
     return render_template('view-product.html', product=product, title = "View Product",
                            review_form=review_form, review_list=review_list)
     
-    
+  
 
 
 

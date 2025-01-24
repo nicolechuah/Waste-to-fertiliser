@@ -1,0 +1,42 @@
+{% extends "base.html" %} {% block content %}
+{% from "includes/_formHelper.html" import render_field %}
+<div class="d-flex justify-content-between">
+  <h1>Inventory</h1>
+  <div>
+    <a href="{{url_for('product_management')}}">Manage Products</a>
+    <button class="btn">Export Inventory</button>
+  </div>
+</div>
+<div>
+  <table class="table table-striped">
+    <thead>
+    	<tr>
+			<th></th>
+        	<th><h4>Product ID</h4></th>
+        	<th><h4>Name</h4></th>
+            <th><h4>Status</h4></th>
+        	<th><h4>Count</h4></th>
+    	</tr>
+    </thead>
+    <tbody>
+    	{% for product in products_list %}
+    	<tr>
+			<td><img src="{{ url_for('static', filename='images/' +  product.get_image()) }}" 
+				alt="{{ product.get_name() }}" style="width: 50px; height: 50px;">
+			</td>
+        	<td>{{product.get_product_id()}}</td>
+        	<td>{{product.get_name()}}</td>
+            <td>{% if product.get_qty()|int !=0 %}
+                <span class="badge bg-success">In Stock</span>
+                {% else %}
+                <span class="badge bg-danger">Out of Stock</span>
+                {% endif %}
+            </td>
+        	<td>
+        	</td>
+    	</tr>
+		{% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}
