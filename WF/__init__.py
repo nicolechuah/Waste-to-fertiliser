@@ -474,8 +474,24 @@ def inventory():
     for key in products_dict:
         product = products_dict.get(key)
         products_list.append(product)
+    
     return render_template('inventory.html', products_list=products_list, form=inventory_form, title = "Inventory")
 
+@app.route('/update-inventory/<int:id>', methods=['POST'])
+def update_inventory(id):
+    inventory_form = InventoryForm(request.form)
+    inventory_form.product_id.data = id
+    if inventory_form.validate() and request.method == 'POST':
+        products_dict = {}
+        db = shelve.open('storage.db', 'w')
+        products_dict = db['Products']
+        product = products_dict.get(id)
+        product.set_qty(inventory_form.qty.data)
+        db['Products'] = products_dict
+        print(product)
+        db.close()
+        flash(f'Inventory for {product.get_name()} updated!', 'success')
+    return redirect(url_for('inventory'))
 @app.route('/update-product/<int:id>/', methods=['POST', 'GET'])
 def update_product(id):
     update_product = ProductForm(request.form)

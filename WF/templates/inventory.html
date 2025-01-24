@@ -33,6 +33,15 @@
                 {% endif %}
             </td>
         	<td>
+            <form method="POST" action="{{ url_for('update_inventory', id = product.get_product_id()) }}">
+              {{ form.hidden_tag() }}
+              {{ form.product_id() }}
+              <div class="form-group">
+                {{ form.qty.label(class="form-label") }}
+                {{ form.qty(class="form-control", value = product.get_qty()) }}
+              </div>
+            <button type="submit" class="btn btn-primary mt-2">Update</button>
+          </form>
         	</td>
     	</tr>
 		{% endfor %}

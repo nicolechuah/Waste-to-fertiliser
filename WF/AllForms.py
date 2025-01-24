@@ -43,8 +43,9 @@ class ProductForm(Form):
     cost_price = FloatField('Cost Price', [validators.NumberRange(min=1, max=10000), validators.DataRequired(message="Please enter a cost price.")])
     visible = BooleanField('Visible', [validators.Optional()], default=True)
 
-class InventoryForm(Form):
+class InventoryForm(FlaskForm):
     qty = IntegerField('Quantity', [validators.NumberRange(min=0, max=100000), validators.DataRequired(message="Please enter a quantity.")])
+    product_id = HiddenField('Product ID', validators=[DataRequired()])
 
 class ReviewForm(FlaskForm):
     rating = HiddenField('Rating', [validators.DataRequired()])
