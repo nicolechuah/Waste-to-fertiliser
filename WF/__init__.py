@@ -1,5 +1,5 @@
 from flask import Flask, render_template, url_for, flash, redirect, request, session
-from forms import RegistrationForm, LoginForm, AccountForm, ProductForm, UserFWF, CheckoutForm, PaymentForm
+from AllForms import RegistrationForm, LoginForm, AccountForm, ProductForm, UserFWF, CheckoutForm, PaymentForm
 from flask_bcrypt import Bcrypt
 from flask_login import login_user, current_user, logout_user, login_required
 import shelve, User
