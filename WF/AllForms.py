@@ -2,10 +2,9 @@
 from flask_wtf import FlaskForm
 from flask_wtf.file import FileField, FileAllowed
 from wtforms.validators import DataRequired, Length, Email, EqualTo, ValidationError,Regexp, Optional
-from wtforms import Form, StringField, IntegerField, FloatField, BooleanField, validators, SubmitField
+from wtforms import Form, StringField, IntegerField, FloatField, BooleanField, validators, SubmitField,RadioField, HiddenField
 from wtforms import PasswordField, BooleanField, TextAreaField, SelectField, EmailField
 from flask_login import current_user
-import User
 
 class RegistrationForm(FlaskForm):
     username = StringField('Username', validators=[DataRequired(), Length(min=2, max=20)])
@@ -40,9 +39,13 @@ class ProductForm(Form):
     description = StringField('Product Description', [validators.Length(min=1, max=1000), validators.DataRequired
                                                       (message="Please enter a product description.")])
     qty = IntegerField('Quantity', [validators.NumberRange(min=1, max=1000), validators.DataRequired(message="Please enter a quantity.")])
-    selling_price = FloatField('Selling Price', [validators.NumberRange(min=1, max=10000), validators.DataRequired(message="Please enter a selling price.")])
+    selling_price = FloatField('Selling Price', [validators.DataRequired(message="Please enter a selling price."),validators.NumberRange(min=1, max=10000,message="Please enter a valid number")])
     cost_price = FloatField('Cost Price', [validators.NumberRange(min=1, max=10000), validators.DataRequired(message="Please enter a cost price.")])
     visible = BooleanField('Visible', [validators.Optional()], default=True)
+
+class ReviewForm(FlaskForm):
+    rating = HiddenField('Rating', [validators.DataRequired()])
+    comment = TextAreaField('Comment', [validators.Length(min=1, max=500), validators.optional()])
 
 class UserFWF(Form):
     first_name = StringField('First Name', [validators.Length(min=1, max=150), validators.DataRequired()])
@@ -95,3 +98,18 @@ class PaymentForm(FlaskForm):
         Regexp(r'^\d{3}$', message="CVV must be exactly 3 digits.")
     ])
     submit = SubmitField('Submit Payment')
+
+
+class CollectFood(Form):
+    name = StringField('Business Name or Individual Name', [validators.Length(min=1, max=150), validators.DataRequired()])
+    email = EmailField('Email Address',
+                       [validators.Length(min=6, max=120), validators.DataRequired(), validators.Email()])
+    method= SelectField('Preferred Collection Method', [validators.DataRequired()],
+                         choices=[('', 'Select'), ('Schedule', 'Scheduled Pick up'),('On-Demand','On-Demand Pick up'),('Drop off','Drop off Pick up')],
+                         default='')
+    type = RadioField('Food Waste Type', choices=[('Leftover', 'Leftover food'), ('Expired', 'Expired food'), ('Spoiled', 'Spoiled or Damaged food'), ('Others','Others')],
+                            default='')
+    address =StringField('Location Address',[validators.length(min=1, max=250), validators.DataRequired(message='Please fill your address')])
+    time = SelectField('Preferred Time slot', [validators.DataRequired()],
+                         choices=[('', 'Select'), ('Morning', 'Morning 8AM-11AM'),('Afternoon','Afternoon 1PM-4PM'),('Evening','Evening 5PM-8PM')],
+                         default='')

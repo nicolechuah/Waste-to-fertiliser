@@ -1,15 +1,22 @@
 from flask import Flask, render_template, url_for, flash, redirect, request, session
 from AllForms import RegistrationForm, LoginForm, AccountForm, ProductForm, UserFWF, CheckoutForm, PaymentForm
+from AllForms import RegistrationForm, LoginForm, AccountForm, ProductForm, UserFWF, CheckoutForm, PaymentForm
+from AllForms import CollectFood,ReviewForm
 from flask_bcrypt import Bcrypt
-from flask_login import login_user, current_user, logout_user, login_required
+from flask_login import login_user, current_user, logout_user, login_required, LoginManager
+
 import shelve, User
 from PIL import Image
+from datetime import datetime
 from werkzeug.utils import secure_filename
 import os
 import secrets
 from Product import Product
+from Review import Review
 import shelve
 from Fwfuser import FWFUser
+from Collect import Collect
+
 
 app = Flask(__name__)
 
@@ -289,6 +296,8 @@ def register():
                 db.close()
                 flash('This email is already registered. Please use a different email.', 'danger')
                 return render_template('register.html', title='Register', form=form)
+            
+        is_admin = session.get('is_admin', False) and 'admin' in request.form
 
         user = User.User(
             user_id,
@@ -319,6 +328,7 @@ def login():
             if form.email.data == user.get_email() and form.password.data == user.get_password(): 
                 session['logged_in'] = True
                 session['username'] = user.get_username()
+                session['is_admin'] = user.is_admin()
                 flash('You have been logged in!', 'success')
                 return redirect(url_for('home'))
         
@@ -338,7 +348,11 @@ def account():
     form = AccountForm()
     users_dict = {}
     db = shelve.open('storage.db', 'c')
-    users_dict = db['Users']
+    try:
+        users_dict = db['Users']
+    except:
+        print("Error in retrieving Users from storage.db")
+        db['Users'] = {}
 
     current_user_id = None
     current_user = None
@@ -397,30 +411,54 @@ def account():
     db.close()
     return render_template("account.html", title="Account", form=form, user=current_user)
 
-@app.route("/account/delete", methods=['POST'])
-def delete_account():
-    db = shelve.open('storage.db', 'c')
-    users_dict = db.get('Users', {})
-    current_user_id = None
-
-    # Find the logged-in user
-    for user_id, user in users_dict.items():
-        if user.get_username() == session['username']:
-            current_user_id = user_id
-            break
-
-    if current_user_id:
-        # Remove user from the database
-        users_dict.pop(current_user_id, None)
-        db['Users'] = users_dict
-        db.close()
-
-        # Clear the session and redirect
-        session.pop('logged_in', None)
-        session.pop('username', None)
-        flash('Your account has been deleted.', 'info')
+@app.route("/delete_user/<int:user_id>", methods=['POST'])
+def delete_user(user_id):
+    if not session.get('is_admin', False):
+        flash('You do not have permission to access this page.', 'danger')
         return redirect(url_for('home'))
 
+    db = shelve.open('storage.db', 'c')
+    users_dict = db.get('Users', {})
+    user = users_dict.pop(user_id, None)
+    db['Users'] = users_dict
+    db.close()
+
+    if user:
+        flash('User deleted successfully.', 'success')
+    else:
+        flash('User not found.', 'danger')
+
+    return redirect(url_for('manage_users'))
+
+@app.route("/edit_user/<int:user_id>", methods=['GET', 'POST'])
+def edit_user(user_id):
+    if not session.get('is_admin', False):
+        flash('You do not have permission to access this page.', 'danger')
+        return redirect(url_for('home'))
+
+    form = AccountForm()
+    db = shelve.open('storage.db', 'c')
+    users_dict = db.get('Users', {})
+    user = users_dict.get(user_id)
+
+    if not user:
+        db.close()
+        flash('User not found.', 'danger')
+        return redirect(url_for('manage_users'))
+
+    if form.validate_on_submit():
+        user.set_username(form.username.data)
+        user.set_email(form.email.data)
+        if form.password.data:
+            user.set_password(form.password.data)
+        users_dict[user_id] = user
+        db['Users'] = users_dict
+        db.close()
+        flash('User updated successfully!', 'success')
+        return redirect(url_for('manage_users'))
+
+    form.username.data = user.get_username()
+    form.email.data = user.get_email()
     db.close()
     flash('Account deletion failed. Please try again.', 'danger')
     return redirect(url_for('account'))
@@ -446,6 +484,7 @@ def create_product():
             
         except:
             print("Error in retrieving Products from storage.db")
+            db['Products'] = {}
         product = Product(create_product.name.data, create_product.description.data, create_product.qty.data, 
                           create_product.selling_price.data, create_product.cost_price.data, create_product.visible.data, saved_image)
         product_dict[product.get_product_id()] = product
@@ -453,11 +492,48 @@ def create_product():
         db['ProductIDs'] = Product.product_id
         db.close()
         print(product)
-        
+        flash(f'Product {create_product.name.data} created!', 'success')
         return redirect(url_for('product_management'))
     return render_template('create-product.html', form=create_product, title = "Create Product")
 
+@app.route("/manageUsers", methods=['GET'])
+def manage_users():
+    if not session.get('is_admin', False):
+        flash('You do not have permission to access this page.', 'danger')
+        return redirect(url_for('home'))
 
+    db = shelve.open('storage.db', 'r')
+    users_dict = db.get('Users', {})
+    db.close()
+
+    return render_template('manageUsers.html', title="Manage Users", users=users_dict)
+
+@app.route("/create_admin", methods=["GET"])
+def create_admin():
+    db = shelve.open('storage.db', 'c')
+    users_dict = db.get('Users', {})
+    user_id = db.get('UserIDs', 0) + 1
+
+    # Check if an admin already exists
+    for user in users_dict.values():
+        if user.is_admin():
+            db.close()
+            return "Admin account already exists.", 400
+
+    # Create the initial admin account
+    admin = User.User(
+        user_id,
+        "admin",  # Username
+        "admin1@wf.com",  # Email
+        "12345",  # Password
+        is_admin=True  # Mark as admin
+    )
+    users_dict[user_id] = admin
+    db['Users'] = users_dict
+    db['UserIDs'] = user_id
+    db.close()
+
+    return "Admin account created successfully.", 200
 
 @app.route('/product-management')
 def product_management():
@@ -503,6 +579,7 @@ def update_product(id):
         product.set_image(saved_image)
         db['Products'] = products_dict
         db.close()
+        flash(f'Product {update_product.name.data} updated!', 'success')
         return redirect(url_for('product_management'))
     else: # for the get request - preload the page with existing details
           # idk why but theres type error if i dont fill it?
@@ -537,17 +614,57 @@ def delete_product(id):
     products_dict.pop(id)
     db['Products'] = products_dict
     db.close()
+    flash(f'Product deleted!', 'success')
     return redirect(url_for('product_management'))
 
-@app.route('/view-product/<int:id>', methods=['GET'])
+@app.route('/view-product/<int:id>', methods=['GET', 'POST'])
 def view_product(id):
     products_dict = {}
-    db = shelve.open('storage.db', 'r')
-    products_dict = db['Products']
+    reviews_dict = {}
+    db = shelve.open('storage.db', 'c')
+    try:
+        products_dict = db['Products']
+        reviews_dict = db['Reviews']
+    except:
+        db['Reviews'] = {}
+        reviews_dict = db['Reviews']
     db.close()
-    
     product = products_dict.get(id)
-    return render_template('view-product.html', product=product, title = "View Product")
+    review_list = []
+    for review in reviews_dict.values():
+        if review.get_product_id() == id:
+            review_list.append(review)
+    review_form = ReviewForm()
+    if request.method == 'POST' and review_form.validate():
+        try:
+            author = session['username']
+        except:
+            author = "Anonymous"
+        rating = review_form.rating.data
+        comment = review_form.comment.data
+        date = datetime.today().strftime('%Y-%m-%d')
+        product_id = id
+        review_dict = {}
+        db = shelve.open('storage.db', 'c')
+        try:
+            review_dict = db['Reviews']
+            review_id = db['ReviewIDs']
+            Review.review_id = review_id
+        except:
+            print("Error in retrieving Reviews from storage.db")
+        review = Review(author, rating, comment, product_id,date)
+        review_dict[review.get_review_id()] = review
+        db['Reviews'] = review_dict
+        db['ReviewIDs'] = Review.review_id
+        db.close()
+        print(review)
+        flash('Review submitted!', 'success')
+        return redirect(url_for('view_product',_anchor='reviews', id=id))
+    return render_template('view-product.html', product=product, title = "View Product",
+                           review_form=review_form, review_list=review_list)
+    
+    
+
 
 
 @app.route('/user_fwf', methods=['GET', 'POST'])
@@ -693,6 +810,106 @@ def fwfuser_ADretrieve():
 
     return render_template('fwfuser_ADretrieve.html', count=len(fwfusers_list), fwfusers_list=fwfusers_list)
 
+@app.route('/collectformR')
+def message():
+    return render_template('collectformR.html')
+
+@app.route('/collectfood', methods=['GET', 'POST'])
+def collect_food():
+    cf_form= CollectFood(request.form)
+    if request.method == 'POST' and cf_form.validate():
+        collect_dict = {}
+        db = shelve.open('storage.db', 'c')
+
+        try:
+            collect_dict = db['Collectusers']
+            collect_id = db['CollectusersIDs']
+            Collect.count_id= collect_id
+
+        except:
+            print("Error in retrieving data.")
+        CollectUser = Collect(cf_form.name.data, cf_form.email.data,
+                                  cf_form.type.data,cf_form.method.data, cf_form.address.data, cf_form.time.data )
+        collect_dict[CollectUser.get_collect_id()] = CollectUser
+        db['Collectusers'] = collect_dict
+        db['CollectusersIDs'] = Collect.count_id
+        db.close()
+
+        return redirect(url_for('message'))
+
+    return render_template('collectfood.html', form=cf_form)
+
+@app.route('/Rcollect_Admin', methods=['GET'])
+def Ad_collect():
+    Admincollect_dict ={}
+    try:
+        db = shelve.open('storage.db', 'r')
+    except:
+        print("Error in retrieving data from storage.db")
+        db = shelve.open('storage.db', 'c')
+        db['Collectusers'] = {}
+
+    Admincollect_dict = db['Collectusers']
+    db.close()
+    partners_list = []
+    for key in Admincollect_dict:
+        partner = Admincollect_dict.get(key)
+        partners_list.append(partner)
+
+    return render_template('Rcollect_Admin.html', count=len(partners_list), partners_list=partners_list)
+
+
+
+@app.route('/Editpartner/<int:id>/', methods=['GET', 'POST'])
+def edit_partner(id):
+    edit_partner_form = CollectFood(request.form)
+
+    if request.method == 'POST' and edit_partner_form.validate():
+        # Open shelve in write mode
+        db = shelve.open('storage.db', 'w')
+        partner_dict = db.get('Collectusers', {})
+
+        partner = partner_dict.get(id)
+
+        if partner:
+            partner.set_name(edit_partner_form.name.data)
+            partner.set_email(edit_partner_form.email.data)
+            partner.set_type(edit_partner_form.type.data)
+            partner.set_method(edit_partner_form.method.data)
+            partner.set_address(edit_partner_form.address.data)
+            partner.set_time(edit_partner_form.time.data)
+
+            # Save updated data
+            db['Collectusers'] = partner_dict
+
+        db.close()
+
+        # Redirect to admin page after successful update
+        return redirect(url_for('Ad_collect'))
+
+    else:
+        # Open shelve in read mode
+        db = shelve.open('storage.db', 'r')
+        partner_dict = db.get('Collectusers', {})
+        db.close()
+
+        # Retrieve the partner by ID
+        partner = partner_dict.get(id)
+
+        if not partner:
+            # Handle case where partner is not found
+            return "Partner not found", 404
+
+        # Populate the form with partner data
+        edit_partner_form.name.data = partner.get_name()
+        edit_partner_form.email.data = partner.get_email()
+        edit_partner_form.type.data = partner.get_type()
+        edit_partner_form.method.data = partner.get_method()
+        edit_partner_form.address.data = partner.get_address()
+        edit_partner_form.time.data = partner.get_time()
+
+    # Render the edit form
+    return render_template('Editpartner.html', form=edit_partner_form, partner=partner)
 ## Helper functions ##
 # SAVE IMAGE #
 def save_image(image):
@@ -711,3 +928,6 @@ def delete_image(image):
 
 if __name__ == '__main__':
     app.run(debug=True)
+
+
+
