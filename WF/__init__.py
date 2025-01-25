@@ -35,15 +35,27 @@ def home():
         print("Error in retrieving data from storage.db")
         db = shelve.open('storage.db', 'c')
         db['Products'] = {}
+        db['Images'] = {}
     products_dict = db['Products']
+    relevant_images = []
     db.close()
 
     products_list = []
     for key in products_dict:
         product = products_dict.get(key)
         products_list.append(product)
+        for image_id in product.get_images():
+            try:
+                image_db = shelve.open('storage.db', 'r')
+                image_dict = image_db['Images']
+                image_db.close()
+            except:
+                print("Error in retrieving data from storage.db")
+            image = image_dict.get(image_id)
+            relevant_images.append(image)
 
-    return render_template('home.html', products_list=products_list, title="Home")
+    return render_template('home.html', products_list=products_list, title="Home",  
+                           relevant_images=relevant_images)
 
 @app.route('/products', methods=['GET', 'POST'])
 def products():
@@ -481,9 +493,7 @@ def product_management():
             image = image_dict.get(image_id)
             relevant_images.append(image)
             
-            cover_image = relevant_images[0] #STILL AN IMAGE OBJECT
-    return render_template('product-management.html', products_list=products_list, title = "Manage Products", 
-            cover_image=cover_image)
+    return render_template('product-management.html', products_list=products_list, title = "Manage Products", relevant_images=relevant_images)
 
 @app.route('/inventory', methods = ['GET', 'POST'])
 def inventory():
@@ -590,10 +600,15 @@ def delete_product(id):
     products_dict = {}
     db = shelve.open('storage.db', 'w')
     products_dict = db['Products']
-    
+    image_dict = db['Images']
     # Delete the image stored
     product = products_dict.get(id)
-    delete_image(product.get_image())
+    all_related_images = product.get_images()
+    for image_id in all_related_images:
+        image = image_dict.get(image_id)
+        image_dict.pop(image_id)
+        Image.delete_image(image.get_image())
+    db['Images'] = image_dict
     
     products_dict.pop(id)
     db['Products'] = products_dict
