@@ -545,15 +545,14 @@ def update_product(id):
         product.set_selling_price(update_product.selling_price.data)
         product.set_cost_price(update_product.cost_price.data)
         product.set_visible(update_product.visible.data)
-        db['Products'] = products_dict
-        db.close()
-        flash(f'Product {update_product.name.data} updated!', 'success')
-        for uploaded_image in request.files.getlist('images'):
-            if uploaded_image != None:
+
+        if len(request.files.getlist('images')) > 0: # if there are images
+            for uploaded_image in request.files.getlist('images'):
                 saved_image = Image.save_image(uploaded_image)
-                new_image = Image(saved_image)  
+                print(saved_image)
+                new_image = Image(saved_image) 
+                print(new_image)
                 image_dict = {}
-                db = shelve.open('storage.db', 'c')
                 try:
                     image_dict = db['Images']
                     image_id = db['ImageIDs']
@@ -564,9 +563,12 @@ def update_product(id):
                 image_dict[new_image.get_image_id()] = new_image #ID = path to image
                 db['Images'] = image_dict
                 db['ImageIDs'] = Image.Image_ID
-                db.close()
                 product.add_image(new_image.get_image_id())
                 print(product)
+        products_dict[id] = product
+        db['Products'] = products_dict
+        db.close()
+        flash(f'Product {update_product.name.data} updated!', 'success')
         return redirect(url_for('product_management'))
     else: # for the get request - preload the page with existing details
           # idk why but theres type error if i dont fill it?
@@ -606,10 +608,8 @@ def delete_product(id):
     all_related_images = product.get_images()
     for image_id in all_related_images:
         image = image_dict.get(image_id)
-        image_dict.pop(image_id)
         Image.delete_image(image.get_image())
     db['Images'] = image_dict
-    
     products_dict.pop(id)
     db['Products'] = products_dict
     db.close()
