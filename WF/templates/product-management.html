@@ -24,7 +24,8 @@
     <tbody>
     	{% for product in products_list %}
     	<tr>
-			<td><img src="{{ url_for('static', filename='images/' +  product.get_image()) }}" 
+			
+			<td><img src="{{ url_for('static', filename='images/' +  cover_image.get_image()) }}" 
 				alt="{{ product.get_name() }}" style="width: 50px; height: 50px;">
 			</td>
         	<td>{{product.get_product_id()}}</td>

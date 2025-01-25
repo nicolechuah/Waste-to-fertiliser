@@ -1,7 +1,9 @@
+from Image import Image
+
 class Product():
     product_id = 0
     
-    def __init__(self, name, description, qty, selling_price, cost_price, visible, image = "default_product.png"):
+    def __init__(self, name, description, qty, selling_price, cost_price, visible, images):
         Product.product_id += 1
         self.__product_id = Product.product_id
         self.__name = name
@@ -10,7 +12,8 @@ class Product():
         self.__selling_price = selling_price
         self.__cost_price = cost_price
         self.__visible = visible
-        self.__image = image
+        self.__images = images
+    
 
     
     def get_product_id(self):
@@ -34,9 +37,6 @@ class Product():
     def get_visible(self):
         return self.__visible
     
-    def get_image(self):
-        return self.__image
-    
     def set_name(self, name):
         self.__name = name
         
@@ -55,9 +55,9 @@ class Product():
     def set_visible(self, visible):
         self.__visible = visible
         
-    def set_image(self, image):
-        self.__image = image
+    def get_images(self):
+        return self.__images #only returns the ID of the images
 
         
     def __str__(self):
-        return f"Product ID: {self.__product_id}, Name: {self.__name}, Image: {self.__image}, Qty:{self.__qty}"
+        return f"Product ID: {self.__product_id}, Name: {self.__name}, Image: {self.__images}, Qty:{self.__qty}"
