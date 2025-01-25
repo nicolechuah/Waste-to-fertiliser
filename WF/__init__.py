@@ -529,23 +529,34 @@ def update_product(id):
         db = shelve.open('storage.db', 'w')
         products_dict = db['Products']
         product = products_dict.get(id)
-        # if image is uploaded, save it
-        image = request.files['image']
-        if image:
-            saved_image = save_image(image)
-            delete_image(product.get_image())
-        else:
-            saved_image = product.get_image()
         product.set_name(update_product.name.data)
         product.set_description(update_product.description.data)
         product.set_qty(update_product.qty.data)
         product.set_selling_price(update_product.selling_price.data)
         product.set_cost_price(update_product.cost_price.data)
         product.set_visible(update_product.visible.data)
-        product.set_image(saved_image)
         db['Products'] = products_dict
         db.close()
         flash(f'Product {update_product.name.data} updated!', 'success')
+        for uploaded_image in request.files.getlist('images'):
+            if uploaded_image != None:
+                saved_image = Image.save_image(uploaded_image)
+                new_image = Image(saved_image)  
+                image_dict = {}
+                db = shelve.open('storage.db', 'c')
+                try:
+                    image_dict = db['Images']
+                    image_id = db['ImageIDs']
+                    Image.image_id = image_id
+                except:
+                    print("Error in retrieving Images from storage.db")
+                    db['Images'] = {}
+                image_dict[new_image.get_image_id()] = new_image #ID = path to image
+                db['Images'] = image_dict
+                db['ImageIDs'] = Image.Image_ID
+                db.close()
+                product.add_image(new_image.get_image_id())
+                print(product)
         return redirect(url_for('product_management'))
     else: # for the get request - preload the page with existing details
           # idk why but theres type error if i dont fill it?

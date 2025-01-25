@@ -8,10 +8,10 @@ class Image:
         if image == None:
             self.__image_id = 1
             self.__image = "default_product.png"
-            
-        Image.Image_ID += 1
-        self.__image_id = Image.Image_ID
-        self.__image = image #make sure to run save_image function first before creating an object
+        else:    
+            Image.Image_ID += 1
+            self.__image_id = Image.Image_ID
+            self.__image = image #make sure to run save_image function first before creating an object
         
     def get_image_id(self):
         return self.__image_id

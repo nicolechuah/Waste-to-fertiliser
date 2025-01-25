@@ -56,7 +56,10 @@ class Product():
         self.__visible = visible
         
     def get_images(self):
-        return self.__images #only returns the ID of the images
+        return self.__images #returns a list of ID of the images
+    
+    def add_image(self, image_id):
+        self.__images.append(image_id) # make sure to only append the ID
 
         
     def __str__(self):
