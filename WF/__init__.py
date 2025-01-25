@@ -475,11 +475,12 @@ def product_management():
             try:
                 image_db = shelve.open('storage.db', 'r')
                 image_dict = image_db['Images']
+                image_db.close()
             except:
                 print("Error in retrieving data from storage.db")
             image = image_dict.get(image_id)
             relevant_images.append(image)
-            image_db.close()
+            
             cover_image = relevant_images[0] #STILL AN IMAGE OBJECT
     return render_template('product-management.html', products_list=products_list, title = "Manage Products", 
             cover_image=cover_image)
@@ -528,7 +529,6 @@ def update_product(id):
         db = shelve.open('storage.db', 'w')
         products_dict = db['Products']
         product = products_dict.get(id)
-        
         # if image is uploaded, save it
         image = request.files['image']
         if image:
@@ -552,12 +552,19 @@ def update_product(id):
         products_dict = {}
         db = shelve.open('storage.db', 'r')
         products_dict = db['Products']
+        
+        image_dict = db['Images']
         db.close()
         
         # populate form with existing data
         product = products_dict.get(id)
+        relevant_image_IDs = product.get_images() #rmb Nicole it returns a list of image IDs
+        relevant_images = []
+        for image_id in relevant_image_IDs:
+            image = image_dict.get(image_id) # now it returns the image object
+            relevant_images.append(image) #append it to image object list rmb to send to template
+            
         update_product.name.data = product.get_name()
-        update_product.image.data = product.get_image()
         update_product.description.data = product.get_description()
         update_product.qty.data = product.get_qty()
         update_product.selling_price.data = product.get_selling_price()
@@ -565,7 +572,7 @@ def update_product(id):
         update_product.visible.data = product.get_visible()
         
         return render_template('update-product.html', form=update_product,
-                               title = "Update Product", product = product)
+                               title = "Update Product", product = product, relevant_images=relevant_images)
 @app.route('/delete-product/<int:id>', methods=['POST'])
 def delete_product(id):
     # stored variable id is passed from delete button @ product-management
