@@ -620,15 +620,23 @@ def delete_product(id):
 def view_product(id):
     products_dict = {}
     reviews_dict = {}
+    image_dict = {}
     db = shelve.open('storage.db', 'c')
     try:
         products_dict = db['Products']
         reviews_dict = db['Reviews']
+        image_dict = db['Images']
     except:
         db['Reviews'] = {}
+        db['Images'] = {}
         reviews_dict = db['Reviews']
     db.close()
     product = products_dict.get(id)
+    relevant_images = []
+    for image_id in product.get_images():
+        image = image_dict.get(image_id)
+        relevant_images.append(image)
+    
     review_list = []
     for review in reviews_dict.values():
         if review.get_product_id() == id:
@@ -660,7 +668,7 @@ def view_product(id):
         flash('Review submitted!', 'success')
         return redirect(url_for('view_product',_anchor='reviews', id=id))
     return render_template('view-product.html', product=product, title = "View Product",
-                           review_form=review_form, review_list=review_list)
+                           review_form=review_form, review_list=review_list, relevant_images=relevant_images)
     
   
 

@@ -4,7 +4,7 @@
 <div class="container mt-5">
     <div class="row">
         <div class="col-md-6">
-            <img src="{{ url_for('static', filename='images/' + product.get_image()) }}" 
+            <img src="{{ url_for('static', filename='images/' + relevant_images[0].get_image()) }}" 
                 alt="{{ product.get_name() }}" class="img-fluid" style="width: 100%; height: 500px;">
         </div>
         <div class="col-md-6">
