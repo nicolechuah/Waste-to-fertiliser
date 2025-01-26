@@ -1,4 +1,5 @@
 from Image import Image
+import shelve
 
 class Product():
     product_id = 0
@@ -12,7 +13,7 @@ class Product():
         self.__selling_price = selling_price
         self.__cost_price = cost_price
         self.__visible = visible
-        self.__images = images
+        self.__images_id = images # a list object of IDs
     
 
     
@@ -55,12 +56,35 @@ class Product():
     def set_visible(self, visible):
         self.__visible = visible
         
-    def get_images(self):
-        return self.__images #returns a list of ID of the images
+    def get_images_id(self):
+        return self.__images_id #returns a list of ID of the images
     
-    def add_image(self, image_id):
-        self.__images.append(image_id) # make sure to only append the ID
+    def add_image_id(self, image_id):
+        self.__images_id.append(image_id) # make sure to only append the ID
+        
+    def remove_image_id(self, image_id):
+        self.__images_id.remove(image_id) # make sure to only remove the ID
+    
+    def get_images(self):
+        with shelve.open('storage.db') as db:
+            image_db = db['Images']
+            list_image_id = []
+            images = []
+            for image_id in self.__images_id:
+                list_image_id.append(image_db[image_id]) # get the image object from the ID
+            for image in list_image_id:
+                images.append(image.get_image()) # get the image name from the object
+        return images 
+
+    def delete_all_images(self): #use only when deleting a product object
+        with shelve.open('storage.db') as db:
+            image_db = db['Images']
+            for image_id in self.__images_id:
+                image = image_db[image_id] #retrieve that image object
+                image.delete_image(image.get_image())
+                del image_db[image_id]
+            db['Images'] = image_db
 
         
     def __str__(self):
-        return f"Product ID: {self.__product_id}, Name: {self.__name}, Image: {self.__images}, Qty:{self.__qty}"
+        return f"Product ID: {self.__product_id}, Name: {self.__name}, Image: {self.__images_id}, Qty:{self.__qty}"

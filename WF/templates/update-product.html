@@ -6,14 +6,14 @@
 
 <h1 class="display-4">Update Product</h1>
 
-<form method="POST" action="" enctype="multipart/form-data" novalidate>
+<form method="POST" action="" enctype="multipart/form-data">
 
     <div>
         <p>Current Images</p>
     </div>
     <div>
-        {% for image in relevant_images %}
-        <img src="{{ url_for('static', filename='images/' +  image.get_image()) }}" alt="{{ product.get_name() }}" 
+        {% for image in product.get_images() %}
+        <img src="{{ url_for('static', filename='images/' +  image)}}" alt="{{ product.get_name() }}" 
         style="width: 100px; height: 100px;">
         {% endfor %}
     </div>

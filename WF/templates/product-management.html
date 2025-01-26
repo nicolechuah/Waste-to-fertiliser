@@ -26,7 +26,7 @@
     	<tr>
 			
 			<td>
-				<img src="{{ url_for('static', filename='images/' +  relevant_images[0].get_image()) }}" 
+				<img src="{{ url_for('static', filename='images/' +  product.get_images()[0]) }}" 
 				alt="{{ product.get_name() }}" style="width: 50px; height: 50px;">
 			</td>
         	<td>{{product.get_product_id()}}</td>

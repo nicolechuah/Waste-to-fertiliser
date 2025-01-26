@@ -468,7 +468,6 @@ def create_product():
 @app.route('/product-management')
 def product_management():
     products_dict = {}
-    relevant_images = []
     try:
         db = shelve.open('storage.db', 'r')
 
@@ -483,17 +482,9 @@ def product_management():
     for key in products_dict:
         product = products_dict.get(key)
         products_list.append(product)
-        for image_id in product.get_images():
-            try:
-                image_db = shelve.open('storage.db', 'r')
-                image_dict = image_db['Images']
-                image_db.close()
-            except:
-                print("Error in retrieving data from storage.db")
-            image = image_dict.get(image_id)
-            relevant_images.append(image)
+        
             
-    return render_template('product-management.html', products_list=products_list, title = "Manage Products", relevant_images=relevant_images)
+    return render_template('product-management.html', products_list=products_list, title = "Manage Products")
 
 @app.route('/inventory', methods = ['GET', 'POST'])
 def inventory():
@@ -563,7 +554,7 @@ def update_product(id):
                 image_dict[new_image.get_image_id()] = new_image #ID = path to image
                 db['Images'] = image_dict
                 db['ImageIDs'] = Image.Image_ID
-                product.add_image(new_image.get_image_id())
+                product.add_image_id(new_image.get_image_id())
                 print(product)
         products_dict[id] = product
         db['Products'] = products_dict
@@ -575,17 +566,10 @@ def update_product(id):
         products_dict = {}
         db = shelve.open('storage.db', 'r')
         products_dict = db['Products']
-        
-        image_dict = db['Images']
         db.close()
         
         # populate form with existing data
         product = products_dict.get(id)
-        relevant_image_IDs = product.get_images() #rmb Nicole it returns a list of image IDs
-        relevant_images = []
-        for image_id in relevant_image_IDs:
-            image = image_dict.get(image_id) # now it returns the image object
-            relevant_images.append(image) #append it to image object list rmb to send to template
             
         update_product.name.data = product.get_name()
         update_product.description.data = product.get_description()
@@ -595,7 +579,7 @@ def update_product(id):
         update_product.visible.data = product.get_visible()
         
         return render_template('update-product.html', form=update_product,
-                               title = "Update Product", product = product, relevant_images=relevant_images)
+                               title = "Update Product", product = product)
 @app.route('/delete-product/<int:id>', methods=['POST'])
 def delete_product(id):
     # stored variable id is passed from delete button @ product-management
@@ -605,11 +589,7 @@ def delete_product(id):
     image_dict = db['Images']
     # Delete the image stored
     product = products_dict.get(id)
-    all_related_images = product.get_images()
-    for image_id in all_related_images:
-        image = image_dict.get(image_id)
-        Image.delete_image(image.get_image())
-    db['Images'] = image_dict
+    product.delete_all_images()
     products_dict.pop(id)
     db['Products'] = products_dict
     db.close()
