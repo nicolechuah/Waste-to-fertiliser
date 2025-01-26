@@ -1,5 +1,5 @@
-'Products', (0, 5)
-'Images', (512, 221)
+'Products', (2560, 266)
+'Images', (512, 138)
 'ImageIDs', (1024, 5)
 'ProductIDs', (1536, 5)
 'Reviews', (2048, 5)

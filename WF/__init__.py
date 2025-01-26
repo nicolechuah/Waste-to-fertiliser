@@ -410,28 +410,29 @@ def create_product():
     # create object of ProductForm class
     relevant_image_IDs = []
     if request.method == 'POST' and create_product.validate():
-        
         for uploaded_image in request.files.getlist('images'):
-            image_dict = {}
-            if uploaded_image != None:
-                db = shelve.open('storage.db', 'c')
-                try:
-                    image_id = db['ImageIDs']
-                    image_dict = db['Images']
-                    Image.Image_ID = image_id
-                except:
-                    print("Error in retrieving Images from storage.db")
-                    db['Images'] = {}
-                    db['ImageIDs'] = 3
-                saved_image = Image.save_image(uploaded_image)
-                new_image = Image(saved_image)  
-                relevant_image_IDs.append(new_image.get_image_id()) # list of product image IDs
-                image_dict[new_image.get_image_id()] = new_image #ID = path to image
-                db['Images'] = image_dict
-                db['ImageIDs'] = Image.Image_ID
-                db.close()
+            if uploaded_image.filename == '': # if no image uploaded
+                saved_image = 'default_product.png'
             else:
-                relevant_image_IDs.append(1) # default image ID
+                saved_image = Image.save_image(uploaded_image)
+            image_dict = {}
+            db = shelve.open('storage.db', 'c')
+            try:
+                image_id = db['ImageIDs']
+                image_dict = db['Images']
+                Image.Image_ID = image_id
+            except:
+                print("Error in retrieving Images from storage.db")
+                db['Images'] = {}
+                db['ImageIDs'] = 3
+            
+            new_image = Image(saved_image)  
+            relevant_image_IDs.append(new_image.get_image_id()) # list of product image IDs
+            image_dict[new_image.get_image_id()] = new_image #ID = path to image
+            db['Images'] = image_dict
+            db['ImageIDs'] = Image.Image_ID
+            db.close()
+
         product_dict = {}
         db = shelve.open('storage.db', 'c')
         
@@ -528,25 +529,26 @@ def update_product(id):
         product.set_cost_price(update_product.cost_price.data)
         product.set_visible(update_product.visible.data)
 
-        if len(request.files.getlist('images')) > 0: # if there are images
+        if request.method == 'POST' and update_product.validate():
             for uploaded_image in request.files.getlist('images'):
-                saved_image = Image.save_image(uploaded_image)
-                print(saved_image)
-                new_image = Image(saved_image) 
-                print(new_image)
-                image_dict = {}
-                try:
-                    image_dict = db['Images']
-                    image_id = db['ImageIDs']
-                    Image.image_id = image_id
-                except:
-                    print("Error in retrieving Images from storage.db")
-                    db['Images'] = {}
-                image_dict[new_image.get_image_id()] = new_image #ID = path to image
-                db['Images'] = image_dict
-                db['ImageIDs'] = Image.Image_ID
-                product.add_image_id(new_image.get_image_id())
-                print(product)
+                if uploaded_image.filename == '': # if no image uploaded
+                    break
+                else:
+                    saved_image = Image.save_image(uploaded_image)
+                    new_image = Image(saved_image)
+                    image_dict = {}
+                    try:
+                        image_dict = db['Images']
+                        image_id = db['ImageIDs']
+                        Image.image_id = image_id
+                    except:
+                        print("Error in retrieving Images from storage.db")
+                        db['Images'] = {}
+                    image_dict[new_image.get_image_id()] = new_image #ID = path to image
+                    db['Images'] = image_dict
+                    db['ImageIDs'] = Image.Image_ID
+                    product.add_image_id(new_image.get_image_id())
+                    print(product)
         products_dict[id] = product
         db['Products'] = products_dict
         db.close()

@@ -3,11 +3,15 @@ import secrets
 from flask import current_app as app
 
 class Image:
-    Image_ID = 2
+    Image_ID = 3
     def __init__(self, image): #image name is still the file name
-        Image.Image_ID += 1
-        self.__image_id = Image.Image_ID
-        self.__image = image #make sure to run save_image function first before creating an object
+        if image == "default_product.png":
+            self.__image_id = 1
+            self.__image = image
+        else:
+            Image.Image_ID += 1
+            self.__image_id = Image.Image_ID
+            self.__image = image #make sure to run save_image function first before creating an object
         
     def get_image_id(self):
         return self.__image_id

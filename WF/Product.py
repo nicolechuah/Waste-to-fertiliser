@@ -13,7 +13,10 @@ class Product():
         self.__selling_price = selling_price
         self.__cost_price = cost_price
         self.__visible = visible
-        self.__images_id = images # a list object of IDs
+        if images == []:
+            self.__images_id = [1] # default image ID
+        else:
+            self.__images_id = images # a list object of IDs
     
 
     
