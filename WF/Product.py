@@ -60,4 +60,4 @@ class Product():
 
         
     def __str__(self):
-        return f"Product ID: {self.__product_id}, Name: {self.__name}, Image: {self.__image}, Visible: {self.__visible}"
+        return f"Product ID: {self.__product_id}, Name: {self.__name}, Image: {self.__image}, Qty:{self.__qty}"

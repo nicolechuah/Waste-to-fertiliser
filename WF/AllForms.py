@@ -38,10 +38,14 @@ class ProductForm(Form):
     image = FileField('Product Image', validators=[FileAllowed(['jpg', 'png', 'jpeg'],message="Only jpg, jpeg, png files are allowed.")])
     description = StringField('Product Description', [validators.Length(min=1, max=1000), validators.DataRequired
                                                       (message="Please enter a product description.")])
-    qty = IntegerField('Quantity', [validators.NumberRange(min=1, max=1000), validators.DataRequired(message="Please enter a quantity.")])
+    qty = IntegerField('Quantity', [validators.NumberRange(min=0, max=100000), validators.DataRequired(message="Please enter a quantity.")])
     selling_price = FloatField('Selling Price', [validators.DataRequired(message="Please enter a selling price."),validators.NumberRange(min=1, max=10000,message="Please enter a valid number")])
     cost_price = FloatField('Cost Price', [validators.NumberRange(min=1, max=10000), validators.DataRequired(message="Please enter a cost price.")])
     visible = BooleanField('Visible', [validators.Optional()], default=True)
+
+class InventoryForm(FlaskForm):
+    qty = IntegerField('Quantity', [validators.NumberRange(min=0, max=100000), validators.DataRequired(message="Please enter a quantity.")])
+    product_id = HiddenField('Product ID', validators=[DataRequired()])
 
 class ReviewForm(FlaskForm):
     rating = HiddenField('Rating', [validators.DataRequired()])
