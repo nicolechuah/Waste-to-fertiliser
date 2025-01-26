@@ -68,23 +68,24 @@ class Product():
     def get_images(self):
         with shelve.open('storage.db') as db:
             image_db = db['Images']
-            list_image_id = []
             images = []
             for image_id in self.__images_id:
-                list_image_id.append(image_db[image_id]) # get the image object from the ID
-            for image in list_image_id:
-                images.append(image.get_image()) # get the image name from the object
-        return images 
+                if image_id in image_db:
+                    image = image_db[image_id]  # get the image object from the ID
+                    images.append(image.get_image())  # get the image name from the object
+                else:
+                    print(f"Image ID {image_id} not found in the database.")
+        return images
 
     def delete_all_images(self): #use only when deleting a product object
         with shelve.open('storage.db') as db:
             image_db = db['Images']
             for image_id in self.__images_id:
-                image = image_db[image_id] #retrieve that image object
-                image.delete_image(image.get_image())
-                del image_db[image_id]
+                if image_id in image_db:
+                    image = image_db[image_id]  # retrieve that image object
+                    image.delete_image(image.get_image())
+                    del image_db[image_id]
             db['Images'] = image_db
-
         
     def __str__(self):
         return f"Product ID: {self.__product_id}, Name: {self.__name}, Image: {self.__images_id}, Qty:{self.__qty}"

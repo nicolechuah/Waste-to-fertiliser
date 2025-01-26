@@ -20,7 +20,7 @@ from Image import Image
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'd6691973382147ed2b8724aa19eb0720'
 app.config['UPLOAD_FOLDER'] = 'static/images'
-app.secret_key = 'secret_key_for_flash_messages'  # Required for flash messages and WTForms
+app.config['MAX_CONTENT_LENGTH'] = 5 *1024 * 1024
 
 
 
@@ -421,20 +421,22 @@ def create_product():
     # create object of ProductForm class
     relevant_image_IDs = []
     if request.method == 'POST' and create_product.validate():
+        
         for uploaded_image in request.files.getlist('images'):
+            image_dict = {}
             if uploaded_image != None:
-                saved_image = Image.save_image(uploaded_image)
-                new_image = Image(saved_image)  
-                image_dict = {}
-                relevant_image_IDs.append(new_image.get_image_id()) # list of product image IDs
                 db = shelve.open('storage.db', 'c')
                 try:
-                    image_dict = db['Images']
                     image_id = db['ImageIDs']
-                    Image.image_id = image_id
+                    image_dict = db['Images']
+                    Image.Image_ID = image_id
                 except:
                     print("Error in retrieving Images from storage.db")
                     db['Images'] = {}
+                    db['ImageIDs'] = 3
+                saved_image = Image.save_image(uploaded_image)
+                new_image = Image(saved_image)  
+                relevant_image_IDs.append(new_image.get_image_id()) # list of product image IDs
                 image_dict[new_image.get_image_id()] = new_image #ID = path to image
                 db['Images'] = image_dict
                 db['ImageIDs'] = Image.Image_ID
