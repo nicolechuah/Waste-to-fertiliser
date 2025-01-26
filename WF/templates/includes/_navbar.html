@@ -20,8 +20,12 @@
                         <li><a class="dropdown-item" href = "/Rcollect_Admin"> Admin Retrieve Collection Program</a></li>
                     </ul>
       </li>
-      <li class="nav-item">
-          <a class="nav-link" href="{{ url_for('manage_users') }}">Manage Users</a>
+      <li class="nav-item dropdown">
+        <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">Manage Users</a>
+        <ul class="dropdown-menu">
+          <li><a class="dropdown-item" href="{{url_for('manage_users')}}">Manage User Accounts</a></li>        
+          <li><a class="dropdown-item" href="{{url_for('create_admin')}}">Admin Account Creation</a></li>
+        </ul>
       </li>
       {% else %}
       <ul class="navbar-nav">

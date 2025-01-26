@@ -113,3 +113,7 @@ class CollectFood(Form):
     time = SelectField('Preferred Time slot', [validators.DataRequired()],
                          choices=[('', 'Select'), ('Morning', 'Morning 8AM-11AM'),('Afternoon','Afternoon 1PM-4PM'),('Evening','Evening 5PM-8PM')],
                          default='')
+    
+class ResetPasswordForm(FlaskForm):
+    email = StringField('Email', validators=[DataRequired(), Email()])
+    submit = SubmitField('Reset Password')

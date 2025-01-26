@@ -1,6 +1,5 @@
 from flask import Flask, render_template, url_for, flash, redirect, request, session
-from AllForms import RegistrationForm, LoginForm, AccountForm, ProductForm, UserFWF, CheckoutForm, PaymentForm
-from AllForms import RegistrationForm, LoginForm, AccountForm, ProductForm, UserFWF, CheckoutForm, PaymentForm
+from AllForms import RegistrationForm, LoginForm, AccountForm, ResetPasswordForm, ProductForm, UserFWF, CheckoutForm, PaymentForm
 from AllForms import CollectFood,ReviewForm
 from flask_bcrypt import Bcrypt
 from flask_login import login_user, current_user, logout_user, login_required, LoginManager
@@ -18,11 +17,13 @@ from Fwfuser import FWFUser
 from Collect import Collect
 
 
+
 app = Flask(__name__)
 
 app.config['SECRET_KEY'] = 'd6691973382147ed2b8724aa19eb0720'
 app.config['UPLOAD_FOLDER'] = 'static/images'
 app.secret_key = 'secret_key_for_flash_messages'  # Required for flash messages and WTForms
+ALLOW_INIT_ADMIN = False  # Set to True to allow the creation of an initial admin account
 
 DB_FILE_PATH = os.path.join(os.path.dirname(__file__), 'storage.db')
 
@@ -297,8 +298,6 @@ def register():
                 flash('This email is already registered. Please use a different email.', 'danger')
                 return render_template('register.html', title='Register', form=form)
             
-        is_admin = session.get('is_admin', False) and 'admin' in request.form
-
         user = User.User(
             user_id,
             form.username.data,
@@ -335,6 +334,23 @@ def login():
         flash('Login Unsuccessful. Please check email and password', 'danger')
 
     return render_template('login.html', title='Login', form=form)
+
+@app.route("/reset_password", methods=['GET', 'POST'])
+def reset_password():
+    form = ResetPasswordForm()
+    if form.validate_on_submit():
+        users_dict = {}
+        db = shelve.open('storage.db', 'r')
+        users_dict = db['Users']
+        db.close()
+        
+        for user in users_dict.values():
+            if form.email.data == user.get_email():
+                flash('An email has been sent with instructions to reset your password.', 'info')
+                return redirect(url_for('login'))
+            
+        flash('Email not found. Please check the email entered.', 'danger')
+    return render_template('reset_password.html', title='Reset Password', form=form)
 
 @app.route("/logout")
 def logout():
@@ -464,6 +480,11 @@ def edit_user(user_id):
     return redirect(url_for('account'))
 @app.route('/create-product', methods=['GET', 'POST'])
 def create_product():
+    # Check if the current user is logged in and is an admin
+    if not session.get('is_admin', False):
+        flash('You do not have permission to access this page.', 'danger')
+        return redirect(url_for('home'))
+
     create_product = ProductForm(request.form)
     # create object of ProductForm class
     
@@ -508,17 +529,64 @@ def manage_users():
 
     return render_template('manageUsers.html', title="Manage Users", users=users_dict)
 
-@app.route("/create_admin", methods=["GET"])
+@app.route("/create_admin", methods=['GET', 'POST'])
 def create_admin():
+    # Check if the current user is logged in and is an admin
+    if not session.get('is_admin', False):
+        flash('You do not have permission to access this page.', 'danger')
+        return redirect(url_for('home'))
+
+    form = RegistrationForm()
+    if form.validate_on_submit():
+        db = shelve.open('user.db', 'c')
+        users_dict = db.get('Users', {})
+        user_id = db.get('UserIDs', 0)
+        user_id += 1
+
+        # Check for duplicate email
+        for user in users_dict.values():
+            if form.email.data == user.get_email():
+                db.close()
+                flash('This email is already registered. Please use a different email.', 'danger')
+                return render_template('create_admin.html', form=form)
+
+        # Create a new admin user
+        admin_user = User.User(
+            user_id,
+            form.username.data,
+            form.email.data,
+            form.password.data,
+            is_admin=True  # Mark as admin
+        )
+        users_dict[admin_user.get_user_id()] = admin_user
+        db['Users'] = users_dict
+        db['UserIDs'] = user_id
+        db.close()
+
+        flash(f'Admin account created for {form.username.data}!', 'success')
+        return redirect(url_for('manage_users'))
+
+    return render_template('create_admin.html', form=form)
+
+
+@app.route("/initialise_admin", methods=["GET"])
+def initialise_admin():
+    # Check if the initialization flag is enabled
+    if not ALLOW_INIT_ADMIN:
+        flash('This route is disabled for security reasons.', 'danger')
+        return redirect(url_for('home'))
+
     db = shelve.open('storage.db', 'c')
     users_dict = db.get('Users', {})
-    user_id = db.get('UserIDs', 0) + 1
+    user_id = db.get('UserIDs', 0)
+    user_id += 1
 
     # Check if an admin already exists
     for user in users_dict.values():
         if user.is_admin():
             db.close()
-            return "Admin account already exists.", 400
+            flash('An admin account already exists.', 'danger')
+            return redirect(url_for('login'))
 
     # Create the initial admin account
     admin = User.User(
@@ -533,7 +601,8 @@ def create_admin():
     db['UserIDs'] = user_id
     db.close()
 
-    return "Admin account created successfully.", 200
+    flash("Admin account created successfully.", 'success')
+    return redirect(url_for('login'))
 
 @app.route('/product-management')
 def product_management():
