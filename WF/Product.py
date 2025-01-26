@@ -89,6 +89,10 @@ class Product():
                     image.delete_image(image.get_image())
                     del image_db[image_id]
             db['Images'] = image_db
-        
+    
+    def remove_default_image(self):
+        if 1 in self.__images_id and len(self.__images_id) > 1:
+            self.__images_id.remove(1)
+            
     def __str__(self):
         return f"Product ID: {self.__product_id}, Name: {self.__name}, Image: {self.__images_id}, Qty:{self.__qty}"

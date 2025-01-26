@@ -548,6 +548,7 @@ def update_product(id):
                     db['Images'] = image_dict
                     db['ImageIDs'] = Image.Image_ID
                     product.add_image_id(new_image.get_image_id())
+                    product.remove_default_image()
                     print(product)
         products_dict[id] = product
         db['Products'] = products_dict
