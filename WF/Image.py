@@ -22,8 +22,6 @@ class Image:
         image_fn = random_hex + f_ext #combine random hex and extension
         image_path = os.path.join(app.config['UPLOAD_FOLDER'], image_fn) #combine root path and image path
         image.save(image_path) #save image to path, save function is under the werkzeug library
-        if f_ext == None:
-            image_fn = "default_product.png"
         return image_fn
     
     @staticmethod

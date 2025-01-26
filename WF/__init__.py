@@ -37,26 +37,15 @@ def home():
         db['Products'] = {}
         db['Images'] = {}
     products_dict = db['Products']
-    relevant_images = []
     db.close()
 
     products_list = []
     for key in products_dict:
         product = products_dict.get(key)
         products_list.append(product)
-        for image_id in product.get_images():
-            try:
-                image_db = shelve.open('storage.db', 'r')
-                image_dict = image_db['Images']
-                image_db.close()
-            except:
-                print("Error in retrieving data from storage.db")
-            image = image_dict.get(image_id)
-            relevant_images.append(image)
 
-    return render_template('home.html', products_list=products_list, title="Home",  
-                           relevant_images=relevant_images)
-
+    return render_template('home.html', products_list=products_list, title="Home") 
+                        
 @app.route('/products', methods=['GET', 'POST'])
 def products():
     if request.method == 'POST':
@@ -602,7 +591,6 @@ def delete_product(id):
 def view_product(id):
     products_dict = {}
     reviews_dict = {}
-    image_dict = {}
     db = shelve.open('storage.db', 'c')
     try:
         products_dict = db['Products']
@@ -610,14 +598,9 @@ def view_product(id):
         image_dict = db['Images']
     except:
         db['Reviews'] = {}
-        db['Images'] = {}
         reviews_dict = db['Reviews']
     db.close()
     product = products_dict.get(id)
-    relevant_images = []
-    for image_id in product.get_images():
-        image = image_dict.get(image_id)
-        relevant_images.append(image)
     
     review_list = []
     for review in reviews_dict.values():
@@ -650,7 +633,7 @@ def view_product(id):
         flash('Review submitted!', 'success')
         return redirect(url_for('view_product',_anchor='reviews', id=id))
     return render_template('view-product.html', product=product, title = "View Product",
-                           review_form=review_form, review_list=review_list, relevant_images=relevant_images)
+                           review_form=review_form, review_list=review_list)
     
   
 
