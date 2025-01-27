@@ -1,4 +1,3 @@
-from Image import Image
 import shelve
 
 class Product():
@@ -17,6 +16,7 @@ class Product():
             self.__images_id = [1] # default image ID
         else:
             self.__images_id = images # a list object of IDs
+        self.__reviews = [] # a list object of IDs
     
 
     
@@ -93,6 +93,31 @@ class Product():
     def remove_default_image(self):
         if 1 in self.__images_id and len(self.__images_id) > 1:
             self.__images_id.remove(1)
+    
+    
+    def get_average_rating(self):
+        try:
+            storage = shelve.open('storage.db')
+            reviews = storage['Reviews']
+            total = 0
+            count = 0
+            related_reviews = []
+            for reviewID, object in reviews.items(): # only retrieving the ID of the reviews
+                
+                if object.get_product_id() == self.get_product_id():
+                    individual_rating = object.get_rating()
+                    total +=  int(individual_rating)
+                    count += 1
+            if count == 0:
+                return 0
+            return f"{total/count:.2f}"
+        except KeyError:
+            storage['Reviews'] = {}
+            return 0
+            
+    
+            
+
             
     def __str__(self):
         return f"Product ID: {self.__product_id}, Name: {self.__name}, Image: {self.__images_id}, Qty:{self.__qty}"

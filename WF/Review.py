@@ -1,3 +1,5 @@
+import shelve
+
 class Review:
     review_id = 0
     def __init__(self, author, rating, comment, product_id, date):
@@ -42,5 +44,6 @@ class Review:
     def set_date(self, date):
         self.__date = date
 
+    
     def __str__(self):
         return f"Author: {self.__author}, Rating: {self.__rating}, Comment: {self.__comment} Product ID: {self.__product_id}"
