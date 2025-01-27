@@ -22,12 +22,9 @@ app = Flask(__name__)
 app.config['SECRET_KEY'] = 'd6691973382147ed2b8724aa19eb0720'
 app.config['UPLOAD_FOLDER'] = os.path.join(app.root_path, 'static', 'images')
 app.config['MAX_CONTENT_LENGTH'] = 10 *1024 * 1024
-ALLOW_INIT_ADMIN = False  # Set to True to allow the creation of an initial admin account
+ALLOW_INIT_ADMIN = True  # Set to True to allow the creation of an initial admin account
 
-DB_FILE_PATH = os.path.join(os.path.dirname(__file__), 'storage.db')
 
-def get_storage():
-    return shelve.open(DB_FILE_PATH, writeback=True)
 
 @app.route('/', methods=['GET', 'POST'])
 def home():
@@ -53,7 +50,7 @@ def home():
         if product_name:
             try:
                 quantity = 1
-                with get_storage() as db:
+                with shelve.open('storage.db', writeback=True) as db:
                     if 'cart' not in db:
                         db['cart'] = {'items': []}
 
@@ -73,7 +70,6 @@ def home():
                         })
 
                     db['cart']['items'] = cart_items
-                    db.sync()
                 flash(f"{product_name} successfully added to cart!", 'success')
             except Exception as e:
                 flash(f"Error adding product to cart: {e}", 'danger')
@@ -89,7 +85,7 @@ def products():
         if product_name:
             try:
                 quantity = 1
-                with get_storage() as db:
+                with shelve.open('storage.db', writeback=True) as db:
                     if 'cart' not in db:
                         db['cart'] = {'items': []}
 
@@ -109,19 +105,54 @@ def products():
                         })
 
                     db['cart']['items'] = cart_items
-                    db.sync()
                 flash(f"{product_name} successfully added to cart!", 'success')
             except Exception as e:
                 flash(f"Error adding product to cart: {e}", 'danger')
 
     return render_template('products.html', title="Products")
 
+@app.route('/buy-now', methods=['POST'])
+def buy_now():
+    product_name = request.form.get('product_name')
+    unit_price = float(request.form.get('unit_price', 0))
+
+    if product_name:
+        try:
+            quantity = 1
+            with shelve.open('storage.db', writeback=True) as db:
+                if 'cart' not in db:
+                    db['cart'] = {'items': []}
+
+                cart_items = db['cart']['items']
+
+                for item in cart_items:
+                    if item['name'] == product_name:
+                        item['quantity'] += quantity
+                        item['total_price'] = item['unit_price'] * item['quantity']
+                        break
+                else:
+                    cart_items.append({
+                        'name': product_name,
+                        'unit_price': unit_price,
+                        'quantity': quantity,
+                        'total_price': unit_price * quantity
+                    })
+
+                db['cart']['items'] = cart_items
+            
+            flash(f"{product_name} successfully added to cart!", 'success')
+            return redirect(url_for('checkout'))
+        except Exception as e:
+            flash(f"Error processing request: {e}", 'danger')
+    
+    return redirect(url_for('home'))
+
 @app.route('/cart', methods=['GET', 'POST'])
 def cart():
     cart_items = []
     overall_price = 0
 
-    with get_storage() as db:
+    with shelve.open('storage.db', writeback=True) as db:
         if 'cart' in db:
             cart_items = db['cart']['items']
 
@@ -151,7 +182,6 @@ def cart():
                 flash(f"{product_name} removed from cart.", 'info')
 
             db['cart']['items'] = cart_items
-            db.sync()
 
         overall_price = sum(item['total_price'] for item in cart_items)
 
@@ -168,11 +198,10 @@ def checkout():
             'address': form.address.data,
             'unit_number': form.unit_number.data
         }
-        with get_storage() as db:
+        with shelve.open('storage.db', writeback=True) as db:
             if 'delivery' not in db:
                 db['delivery'] = {'records': []}
             db['delivery']['records'].append(delivery_data)
-            db.sync()
         return redirect(url_for('payment'))
     return render_template('checkout.html', form=form, title="Checkout")
 
@@ -186,7 +215,7 @@ def payment():
             'expiry_date': form.expiry_date.data,
             'cvv': form.cvv.data
         }
-        with get_storage() as db:
+        with shelve.open('storage.db', writeback=True) as db:
             if 'payment' not in db:
                 db['payment'] = {'records': []}
             db['payment']['records'].append(payment_data)
@@ -195,7 +224,6 @@ def payment():
                 db['complete'] = {'items': []}
             db['complete']['items'].extend(db.get('cart', {}).get('items', []))
             db['cart'] = {'items': []}
-            db.sync()
 
         flash("Payment successfully processed!", 'success')
         return redirect(url_for('home'))
@@ -203,7 +231,7 @@ def payment():
 
 @app.route('/user')
 def user():
-    with get_storage() as db:
+    with shelve.open('storage.db', 'r') as db:
         complete_data = db.get('complete', {}).get('items', [])
         delivery_data = db.get('delivery', {}).get('records', [])
         payment_data = db.get('payment', {}).get('records', [])
@@ -213,7 +241,7 @@ def user():
 @app.route('/edit-delivery/<int:id>', methods=['GET', 'POST'])
 def edit_delivery(id):
     form = CheckoutForm()
-    with get_storage() as db:
+    with shelve.open('storage.db', writeback=True) as db:
         delivery_data = db.get('delivery', {}).get('records', [])
         if id >= len(delivery_data):
             flash("Invalid delivery record.", 'danger')
@@ -228,7 +256,6 @@ def edit_delivery(id):
                 'unit_number': form.unit_number.data
             }
             db['delivery']['records'] = delivery_data
-            db.sync()
             flash("Delivery details updated successfully.", 'success')
             return redirect(url_for('user'))
 
@@ -243,7 +270,7 @@ def edit_delivery(id):
 @app.route('/edit-payment/<int:id>', methods=['GET', 'POST'])
 def edit_payment(id):
     form = PaymentForm()
-    with get_storage() as db:
+    with shelve.open('storage.db', writeback=True) as db:
         payment_data = db.get('payment', {}).get('records', [])
         if id >= len(payment_data):
             flash("Invalid payment record.", 'danger')
@@ -257,7 +284,6 @@ def edit_payment(id):
                 'cvv': form.cvv.data
             }
             db['payment']['records'] = payment_data
-            db.sync()
             flash("Payment details updated successfully.", 'success')
             return redirect(url_for('user'))
 
@@ -451,33 +477,60 @@ def edit_user(user_id):
     if not session.get('is_admin', False):
         flash('You do not have permission to access this page.', 'danger')
         return redirect(url_for('home'))
-
+    
     form = AccountForm()
     db = shelve.open('storage.db', 'c')
-    users_dict = db.get('Users', {})
-    user = users_dict.get(user_id)
 
-    if not user:
+    try:
+        users_dict = db['Users']
+    except KeyError:
+        users_dict = {}
+
+    # Retrieve the user by user_id
+    current_user = users_dict.get(user_id)
+
+    if not current_user:
         db.close()
         flash('User not found.', 'danger')
         return redirect(url_for('manage_users'))
 
+    # Handle form submission
     if form.validate_on_submit():
-        user.set_username(form.username.data)
-        user.set_email(form.email.data)
-        if form.password.data:
-            user.set_password(form.password.data)
-        users_dict[user_id] = user
-        db['Users'] = users_dict
-        db.close()
-        flash('User updated successfully!', 'success')
-        return redirect(url_for('manage_users'))
+        updated = False
 
-    form.username.data = user.get_username()
-    form.email.data = user.get_email()
+        # Update username
+        if form.username.data and form.username.data != current_user.get_username():
+            current_user.set_username(form.username.data)
+            updated = True
+
+        # Update email
+        if form.email.data and form.email.data != current_user.get_email():
+            current_user.set_email(form.email.data)
+            updated = True
+
+        # Update password
+        if form.password.data:
+            current_user.set_password(form.password.data)
+            updated = True
+
+        # Save changes to the database
+        if updated:
+            users_dict[user_id] = current_user  # Save updated user
+            db['Users'] = users_dict
+            db.close()
+            flash("User details have been updated successfully!", "success")
+            return redirect(url_for("manage_users"))
+        else:
+            flash("No changes were made.", "info")
+
+    # Pre-fill the form with the current user's data for GET requests
+    form.username.data = current_user.get_username()
+    form.email.data = current_user.get_email()
+    form.current_password.data = current_user.get_password()
+
     db.close()
-    flash('Account deletion failed. Please try again.', 'danger')
-    return redirect(url_for('account'))
+    return render_template("edit_user.html", title="Edit User", form=form, user=current_user)
+
 @app.route('/create-product', methods=['GET', 'POST'])
 def create_product():
     # Check if the current user is logged in and is an admin
@@ -545,7 +598,6 @@ def manage_users():
     db.close()
 
     return render_template('manageUsers.html', title="Manage Users", users=users_dict)
-
 @app.route("/create_admin", methods=['GET', 'POST'])
 def create_admin():
     # Check if the current user is logged in and is an admin
@@ -555,7 +607,7 @@ def create_admin():
 
     form = RegistrationForm()
     if form.validate_on_submit():
-        db = shelve.open('user.db', 'c')
+        db = shelve.open('storage.db', 'c')
         users_dict = db.get('Users', {})
         user_id = db.get('UserIDs', 0)
         user_id += 1
@@ -799,12 +851,46 @@ def view_product(id):
         print(review)
         flash('Review submitted!', 'success')
         return redirect(url_for('view_product',_anchor='reviews', id=id))
+    if request.method == 'POST' and request.form.get('product_name'):
+        product_name = request.form.get('product_name')
+        unit_price = float(request.form.get('unit_price', 0))
+        try:
+            quantity = 1
+            with shelve.open('storage.db', writeback=True) as db:
+                if 'cart' not in db:
+                     db['cart'] = {'items': []}
+
+                cart_items = db['cart']['items']
+
+                for item in cart_items:
+                    if item['name'] == product_name:
+                        item['quantity'] += quantity
+                        item['total_price'] = item['unit_price'] * item['quantity']
+                        break
+                else:
+                    cart_items.append({
+                        'name': product_name,
+                        'unit_price': unit_price,
+                        'quantity': quantity,
+                        'total_price': unit_price * quantity
+                    })
+
+                db['cart']['items'] = cart_items
+            flash(f"{product_name} successfully added to cart!", 'success')
+        except Exception as e:
+            flash(f"Error adding product to cart: {e}", 'danger')
     return render_template('view-product.html', product=product, title = "View Product",
                            review_form=review_form, review_list=review_list)
     
-  
 
 
+@app.route('/fwfinfo')
+def food_waste_friday():
+    return render_template('fwfinfo.html')
+
+@app.route('/foodcollectionprograminfo')
+def program():
+    return render_template('foodcollectionprograminfo.html')
 
 @app.route('/user_fwf', methods=['GET', 'POST'])
 def fwf_user():
@@ -949,6 +1035,7 @@ def fwfuser_ADretrieve():
 
     return render_template('fwfuser_ADretrieve.html', count=len(fwfusers_list), fwfusers_list=fwfusers_list)
 
+
 @app.route('/collectformR')
 def message():
     return render_template('collectformR.html')
@@ -1049,6 +1136,61 @@ def edit_partner(id):
 
     # Render the edit form
     return render_template('Editpartner.html', form=edit_partner_form, partner=partner)
+
+@app.route('/approve_partner/<int:id>')
+def approve_partner(id):
+    db = shelve.open('storage.db', 'w')
+    partner_dict = db.get('Collectusers', {})
+    approved_dict = db.get('Approvedusers', {})
+
+    partner = partner_dict.pop(id, None)  # Remove from pending
+    if partner:
+        approved_dict[id] = partner  # Add to approved
+
+    db['Collectusers'] = partner_dict
+    db['Approvedusers'] = approved_dict
+    db.close()
+
+    return redirect(url_for('Ad_collect'))
+
+@app.route('/reject_partner/<int:id>')
+def reject_partner(id):
+    db = shelve.open('storage.db', 'w')
+    partner_dict = db.get('Collectusers', {})
+    rejected_dict = db.get('Rejectedusers', {})
+
+    partner = partner_dict.pop(id, None)  # Remove from pending
+    if partner:
+        rejected_dict[id] = partner  # Add to rejected
+
+    db['Collectusers'] = partner_dict
+    db['Rejectedusers'] = rejected_dict
+    db.close()
+
+    return redirect(url_for('Ad_collect'))
+
+
+@app.route('/ApproveCollect', methods=['GET'])
+def approved_partners():
+    approved_dict = {}
+    try:
+        # Open the shelve database in read mode
+        db = shelve.open('storage.db', 'r')
+        approved_dict = db.get('Approvedusers', {})  # Retrieve only approved users
+    except Exception as e:
+        print(f"Error in retrieving data from storage.db: {e}")
+        approved_dict = {}  # Default to empty if any error occurs
+    finally:
+        db.close()
+
+    partners_list = []
+    for key, partner in approved_dict.items():
+        partners_list.append(partner)
+
+    # Render the Approved Partners page with the list of approved partners
+    return render_template('ApproveCollect.html', count=len(partners_list), partners_list=partners_list)
+
+
 
 
 if __name__ == '__main__':

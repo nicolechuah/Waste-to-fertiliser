@@ -5,7 +5,7 @@ from wtforms.validators import DataRequired, Length, Email, EqualTo, ValidationE
 from wtforms import Form, StringField, IntegerField, FloatField, BooleanField, validators, SubmitField,RadioField, HiddenField
 from wtforms import PasswordField, BooleanField, TextAreaField, SelectField, EmailField
 from flask_login import current_user
-
+import User
 class RegistrationForm(FlaskForm):
     username = StringField('Username', validators=[DataRequired(), Length(min=2, max=20)])
     email = StringField('Email', validators=[DataRequired(), Email()])
@@ -52,14 +52,19 @@ class ReviewForm(FlaskForm):
     comment = TextAreaField('Comment', [validators.Length(min=1, max=500), validators.optional()])
 
 class UserFWF(Form):
-    first_name = StringField('First Name', [validators.Length(min=1, max=150), validators.DataRequired()])
-    last_name = StringField('Last Name', [validators.Length(min=1, max=150), validators.DataRequired()])
-    gender = SelectField('Gender', [validators.DataRequired()],
-                         choices=[('', 'Select'), ('F', 'Female'), ('M', 'Male')],
-                         default='')
-    email = EmailField('Email Address',
-                       [validators.Length(min=6, max=120), validators.DataRequired(), validators.Email()])
+    first_name = StringField('First Name', [
+            validators.Length(min=1, max=150, message="First name must be between 1 and 150 characters."),
+            validators.DataRequired(message="First name is required."),
+            Regexp(r"^[a-zA-Z\s'-]+$", message="First name can only contain letters, spaces, hyphens, and apostrophes.")])
+    
+    last_name = StringField('Last Name', [validators.Length(min=1, max=150, message="Last name must be between 1 and 150 characters."),
+    validators.DataRequired(message="Last name is required."),Regexp(r"^[a-zA-Z\s'-]+$", message="Last name can only contain letters, spaces, hyphens, and apostrophes.")])
 
+    gender = SelectField('Gender', [validators.DataRequired(message="Please select a gender.")], choices=[('', 'Select'), ('F', 'Female'), ('M', 'Male'),('U', 'Unknown')])
+    
+    email = EmailField('Email Address', [validators.Length(min=6, max=120, message="Email must be between 6 and 120 characters."),validators.DataRequired(message="Email is required."),
+        validators.Email(message="Please enter a valid email address.")])
+    
     remarks = TextAreaField('Remarks', [validators.Optional()])
 
 class CheckoutForm(FlaskForm):
@@ -105,14 +110,14 @@ class PaymentForm(FlaskForm):
 
 
 class CollectFood(Form):
-    name = StringField('Business Name or Individual Name', [validators.Length(min=1, max=150), validators.DataRequired()])
+    name = StringField('Business Name or Individual Name', [validators.Length(min=1, max=150), validators.DataRequired(),Regexp(r"^[a-zA-Z\s'-]+$", message="Name can only contain letters, spaces, hyphens, and apostrophes.")])
     email = EmailField('Email Address',
                        [validators.Length(min=6, max=120), validators.DataRequired(), validators.Email()])
     method= SelectField('Preferred Collection Method', [validators.DataRequired()],
                          choices=[('', 'Select'), ('Schedule', 'Scheduled Pick up'),('On-Demand','On-Demand Pick up'),('Drop off','Drop off Pick up')],
                          default='')
     type = RadioField('Food Waste Type', choices=[('Leftover', 'Leftover food'), ('Expired', 'Expired food'), ('Spoiled', 'Spoiled or Damaged food'), ('Others','Others')],
-                            default='')
+                            default='', validators=[validators.DataRequired()])
     address =StringField('Location Address',[validators.length(min=1, max=250), validators.DataRequired(message='Please fill your address')])
     time = SelectField('Preferred Time slot', [validators.DataRequired()],
                          choices=[('', 'Select'), ('Morning', 'Morning 8AM-11AM'),('Afternoon','Afternoon 1PM-4PM'),('Evening','Evening 5PM-8PM')],
@@ -121,3 +126,4 @@ class CollectFood(Form):
 class ResetPasswordForm(FlaskForm):
     email = StringField('Email', validators=[DataRequired(), Email()])
     submit = SubmitField('Reset Password')
+    

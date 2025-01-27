@@ -24,7 +24,11 @@
                     <input type="hidden" name="unit_price" value="{{ product.get_selling_price() }}">
                     <button type="submit" class="btn btn-success me-1">Add to Cart</button>
                 </form>
-                <a href="#" class="btn btn-secondary me-1">Buy Now</a>
+                <form method="POST" action="{{ url_for('buy_now') }}">
+                    <input type="hidden" name="product_name" value="{{ product.get_name() }}">
+                    <input type="hidden" name="unit_price" value="{{ product.get_selling_price() }}">
+                    <button type="submit" class="btn btn-secondary">Buy Now</button>
+                </form>
             </div>
         </div>
     </div>

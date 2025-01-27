@@ -25,8 +25,16 @@
             <p>{{ product.get_description() }}</p>
             <h4 class = "pt-5">Price: {{ product.get_selling_price() }}</h4>
             <div class="d-flex">
-                <a href="#" class="btn btn-primary me-2">Add to cart</a>
-                <a href="#" class="btn btn-secondary">Buy now</a>
+                <form method="POST">
+                    <input type="hidden" name="product_name" value="{{ product.get_name() }}">
+                    <input type="hidden" name="unit_price" value="{{ product.get_selling_price() }}">
+                    <button type="submit" class="btn btn-primary me-2">Add to Cart</button>
+                </form>
+                <form method="POST" action="{{ url_for('buy_now') }}">
+                    <input type="hidden" name="product_name" value="{{ product.get_name() }}">
+                    <input type="hidden" name="unit_price" value="{{ product.get_selling_price() }}">
+                    <button type="submit" class="btn btn-secondary">Buy Now</button>
+                </form>
             </div>
             <p>Ratings: {{ product.get_average_rating() }}</p>
         </div>

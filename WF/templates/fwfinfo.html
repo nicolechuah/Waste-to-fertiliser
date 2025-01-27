@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+
+{% block title %}Food Waste Friday{% endblock %}
+
+{% block content %}
+
+<div class="container my-5">
+    <!-- Header -->
+    <div class="text-center">
+        <h1 class="display-4 text-success mb-4">Food Waste Friday</h1>
+        <p style="color:rgb(35, 113, 35);">Join us every Friday evening to help reduce food waste and create a sustainable future!</p>
+    </div>
+
+    <!-- Event Details -->
+    <div class="card border-success mb-4">
+        <div class="card-header bg-success text-white">
+            <h3  class="card-title" style="color:rgb(240, 249, 240);">Event Details</h3>
+        </div>
+        <div class="card-body" style="color:rgb(35, 113, 35);">
+            <p><strong>Day:</strong> Every Friday</p>
+            <p><strong>Time:</strong> 4:00 PM - 7:00 PM</p>
+            <p><strong>Location:</strong> Community Hall, Green Valley</p>
+            <p><strong>Contact:</strong> info@wastetofertilizer.com | +1 234 567 890</p>
+        </div>
+    </div>
+
+    <!-- Why Attend -->
+    <div class="card border-success mb-4">
+        <div class="card-header bg-success text-white">
+            <h3 class="card-title" style="color:rgb(240, 249, 240);">Why Attend?</h3>
+        </div>
+        <div class="card-body" style="color:rgb(35, 113, 35);">
+            <p>
+                Be part of a movement dedicated to reducing food waste and promoting sustainable practices. 
+                You'll gain valuable insights into practical ways to minimize food waste in your daily routine 
+                and learn DIY composting techniques that turn leftovers into organic fertilizers. 
+                It's not just an event; it's an opportunity to meet like-minded individuals who care about the planet, 
+                exchange ideas, and work together for a greener tomorrow.
+            </p>
+        </div>
+    </div>
+
+    <!-- Incentives -->
+    <div class="card border-success mb-4">
+        <div class="card-header bg-success text-white">
+            <h3 class="card-title" style="color:rgb(240, 249, 240);">Incentives for Participants</h3>
+        </div>
+        <div class="card-body" style="color:rgb(35, 113, 35);">
+            <p>
+                Early registrants will receive exclusive reusable tote bags as a token of appreciation. 
+                Additionally, participants have the chance to win eco-friendly items like compost bins and seed kits, 
+                perfect for starting your journey toward sustainable living. 
+                Showcasing your dedication to environmental sustainability, you'll also receive a certificate of participation. 
+                Join us to make a real difference and take home some exciting rewards!
+            </p>
+        </div>
+    </div>
+
+    <!-- Call to Action -->
+    <div class="text-center mt-4">
+        <a href="{{ url_for('fwf_user') }}" class="btn btn-lg btn-success text-white">Register for Food Waste Friday</a>
+    </div>
+</div>
+{% endblock %}  
