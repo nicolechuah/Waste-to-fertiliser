@@ -816,6 +816,34 @@ def view_product(id):
         print(review)
         flash('Review submitted!', 'success')
         return redirect(url_for('view_product',_anchor='reviews', id=id))
+    if request.method == 'POST' and request.form.get('product_name'):
+        product_name = request.form.get('product_name')
+        unit_price = float(request.form.get('unit_price', 0))
+        try:
+            quantity = 1
+            with shelve.open('storage.db', writeback=True) as db:
+                if 'cart' not in db:
+                     db['cart'] = {'items': []}
+
+                cart_items = db['cart']['items']
+
+                for item in cart_items:
+                    if item['name'] == product_name:
+                        item['quantity'] += quantity
+                        item['total_price'] = item['unit_price'] * item['quantity']
+                        break
+                else:
+                    cart_items.append({
+                        'name': product_name,
+                        'unit_price': unit_price,
+                        'quantity': quantity,
+                        'total_price': unit_price * quantity
+                    })
+
+                db['cart']['items'] = cart_items
+            flash(f"{product_name} successfully added to cart!", 'success')
+        except Exception as e:
+            flash(f"Error adding product to cart: {e}", 'danger')
     return render_template('view-product.html', product=product, title = "View Product",
                            review_form=review_form, review_list=review_list)
     
