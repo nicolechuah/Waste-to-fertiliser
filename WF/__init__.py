@@ -22,7 +22,7 @@ app = Flask(__name__)
 app.config['SECRET_KEY'] = 'd6691973382147ed2b8724aa19eb0720'
 app.config['UPLOAD_FOLDER'] = 'static/images'
 app.secret_key = 'secret_key_for_flash_messages'  # Required for flash messages and WTForms
-ALLOW_INIT_ADMIN = False  # Set to True to allow the creation of an initial admin account
+ALLOW_INIT_ADMIN = True  # Set to True to allow the creation of an initial admin account
 
 
 
@@ -418,33 +418,60 @@ def edit_user(user_id):
     if not session.get('is_admin', False):
         flash('You do not have permission to access this page.', 'danger')
         return redirect(url_for('home'))
-
+    
     form = AccountForm()
     db = shelve.open('storage.db', 'c')
-    users_dict = db.get('Users', {})
-    user = users_dict.get(user_id)
 
-    if not user:
+    try:
+        users_dict = db['Users']
+    except KeyError:
+        users_dict = {}
+
+    # Retrieve the user by user_id
+    current_user = users_dict.get(user_id)
+
+    if not current_user:
         db.close()
         flash('User not found.', 'danger')
         return redirect(url_for('manage_users'))
 
+    # Handle form submission
     if form.validate_on_submit():
-        user.set_username(form.username.data)
-        user.set_email(form.email.data)
-        if form.password.data:
-            user.set_password(form.password.data)
-        users_dict[user_id] = user
-        db['Users'] = users_dict
-        db.close()
-        flash('User updated successfully!', 'success')
-        return redirect(url_for('manage_users'))
+        updated = False
 
-    form.username.data = user.get_username()
-    form.email.data = user.get_email()
+        # Update username
+        if form.username.data and form.username.data != current_user.get_username():
+            current_user.set_username(form.username.data)
+            updated = True
+
+        # Update email
+        if form.email.data and form.email.data != current_user.get_email():
+            current_user.set_email(form.email.data)
+            updated = True
+
+        # Update password
+        if form.password.data:
+            current_user.set_password(form.password.data)
+            updated = True
+
+        # Save changes to the database
+        if updated:
+            users_dict[user_id] = current_user  # Save updated user
+            db['Users'] = users_dict
+            db.close()
+            flash("User details have been updated successfully!", "success")
+            return redirect(url_for("manage_users"))
+        else:
+            flash("No changes were made.", "info")
+
+    # Pre-fill the form with the current user's data for GET requests
+    form.username.data = current_user.get_username()
+    form.email.data = current_user.get_email()
+    form.current_password.data = current_user.get_password()
+
     db.close()
-    flash('Account deletion failed. Please try again.', 'danger')
-    return redirect(url_for('account'))
+    return render_template("edit_user.html", title="Edit User", form=form, user=current_user)
+
 @app.route('/create-product', methods=['GET', 'POST'])
 def create_product():
     # Check if the current user is logged in and is an admin
@@ -495,7 +522,6 @@ def manage_users():
     db.close()
 
     return render_template('manageUsers.html', title="Manage Users", users=users_dict)
-
 @app.route("/create_admin", methods=['GET', 'POST'])
 def create_admin():
     # Check if the current user is logged in and is an admin
@@ -505,7 +531,7 @@ def create_admin():
 
     form = RegistrationForm()
     if form.validate_on_submit():
-        db = shelve.open('user.db', 'c')
+        db = shelve.open('storage.db', 'c')
         users_dict = db.get('Users', {})
         user_id = db.get('UserIDs', 0)
         user_id += 1
