@@ -15,14 +15,13 @@ from Review import Review
 import shelve
 from Fwfuser import FWFUser
 from Collect import Collect
-
-
+from Image import Image
 
 app = Flask(__name__)
 
 app.config['SECRET_KEY'] = 'd6691973382147ed2b8724aa19eb0720'
-app.config['UPLOAD_FOLDER'] = 'static/images'
-app.secret_key = 'secret_key_for_flash_messages'  # Required for flash messages and WTForms
+app.config['UPLOAD_FOLDER'] = os.path.join(app.root_path, 'static', 'images')
+app.config['MAX_CONTENT_LENGTH'] = 10 *1024 * 1024
 ALLOW_INIT_ADMIN = False  # Set to True to allow the creation of an initial admin account
 
 DB_FILE_PATH = os.path.join(os.path.dirname(__file__), 'storage.db')
@@ -38,6 +37,7 @@ def home():
         print("Error in retrieving data from storage.db")
         db = shelve.open('storage.db', 'c')
         db['Products'] = {}
+        db['Images'] = {}
     products_dict = db['Products']
     db.close()
 
@@ -78,8 +78,8 @@ def home():
             except Exception as e:
                 flash(f"Error adding product to cart: {e}", 'danger')
 
-    return render_template('home.html', products_list=products_list, title="Home")
-
+    return render_template('home.html', products_list=products_list, title="Home") 
+                        
 @app.route('/products', methods=['GET', 'POST'])
 def products():
     if request.method == 'POST':
@@ -487,14 +487,31 @@ def create_product():
 
     create_product = ProductForm(request.form)
     # create object of ProductForm class
-    
+    relevant_image_IDs = []
     if request.method == 'POST' and create_product.validate():
-        image = request.files['image']
-        if image:
-            saved_image = save_image(image)
-        else:
-            saved_image = "default_product.png"
-        
+        for uploaded_image in request.files.getlist('images'):
+            if uploaded_image.filename == '': # if no image uploaded
+                saved_image = 'default_product.png'
+            else:
+                saved_image = Image.save_image(uploaded_image)
+            image_dict = {}
+            db = shelve.open('storage.db', 'c')
+            try:
+                image_id = db['ImageIDs']
+                image_dict = db['Images']
+                Image.Image_ID = image_id
+            except:
+                print("Error in retrieving Images from storage.db")
+                db['Images'] = {}
+                db['ImageIDs'] = 3
+            
+            new_image = Image(saved_image)  
+            relevant_image_IDs.append(new_image.get_image_id()) # list of product image IDs
+            image_dict[new_image.get_image_id()] = new_image #ID = path to image
+            db['Images'] = image_dict
+            db['ImageIDs'] = Image.Image_ID
+            db.close()
+
         product_dict = {}
         db = shelve.open('storage.db', 'c')
         
@@ -502,12 +519,12 @@ def create_product():
             product_dict = db['Products']
             product_id = db['ProductIDs']
             Product.product_id = product_id
-            
+
         except:
             print("Error in retrieving Products from storage.db")
             db['Products'] = {}
         product = Product(create_product.name.data, create_product.description.data, create_product.qty.data, 
-                          create_product.selling_price.data, create_product.cost_price.data, create_product.visible.data, saved_image)
+                          create_product.selling_price.data, create_product.cost_price.data, create_product.visible.data, relevant_image_IDs)
         product_dict[product.get_product_id()] = product
         db['Products'] = product_dict
         db['ProductIDs'] = Product.product_id
@@ -609,6 +626,7 @@ def product_management():
     products_dict = {}
     try:
         db = shelve.open('storage.db', 'r')
+
     except:
         print("Error in retrieving data from storage.db")
         db = shelve.open('storage.db', 'c')
@@ -620,6 +638,8 @@ def product_management():
     for key in products_dict:
         product = products_dict.get(key)
         products_list.append(product)
+        
+            
     return render_template('product-management.html', products_list=products_list, title = "Manage Products")
 
 @app.route('/inventory', methods = ['GET', 'POST'])
@@ -666,21 +686,35 @@ def update_product(id):
         db = shelve.open('storage.db', 'w')
         products_dict = db['Products']
         product = products_dict.get(id)
-        
-        # if image is uploaded, save it
-        image = request.files['image']
-        if image:
-            saved_image = save_image(image)
-            delete_image(product.get_image())
-        else:
-            saved_image = product.get_image()
         product.set_name(update_product.name.data)
         product.set_description(update_product.description.data)
         product.set_qty(update_product.qty.data)
         product.set_selling_price(update_product.selling_price.data)
         product.set_cost_price(update_product.cost_price.data)
         product.set_visible(update_product.visible.data)
-        product.set_image(saved_image)
+
+        if request.method == 'POST' and update_product.validate():
+            for uploaded_image in request.files.getlist('images'):
+                if uploaded_image.filename == '': # if no image uploaded
+                    break
+                else:
+                    saved_image = Image.save_image(uploaded_image)
+                    new_image = Image(saved_image)
+                    image_dict = {}
+                    try:
+                        image_dict = db['Images']
+                        image_id = db['ImageIDs']
+                        Image.image_id = image_id
+                    except:
+                        print("Error in retrieving Images from storage.db")
+                        db['Images'] = {}
+                    image_dict[new_image.get_image_id()] = new_image #ID = path to image
+                    db['Images'] = image_dict
+                    db['ImageIDs'] = Image.Image_ID
+                    product.add_image_id(new_image.get_image_id())
+                    product.remove_default_image()
+                    print(product)
+        products_dict[id] = product
         db['Products'] = products_dict
         db.close()
         flash(f'Product {update_product.name.data} updated!', 'success')
@@ -694,8 +728,8 @@ def update_product(id):
         
         # populate form with existing data
         product = products_dict.get(id)
+            
         update_product.name.data = product.get_name()
-        update_product.image.data = product.get_image()
         update_product.description.data = product.get_description()
         update_product.qty.data = product.get_qty()
         update_product.selling_price.data = product.get_selling_price()
@@ -710,11 +744,10 @@ def delete_product(id):
     products_dict = {}
     db = shelve.open('storage.db', 'w')
     products_dict = db['Products']
-    
+    image_dict = db['Images']
     # Delete the image stored
     product = products_dict.get(id)
-    delete_image(product.get_image())
-    
+    product.delete_all_images()
     products_dict.pop(id)
     db['Products'] = products_dict
     db.close()
@@ -729,11 +762,13 @@ def view_product(id):
     try:
         products_dict = db['Products']
         reviews_dict = db['Reviews']
+        image_dict = db['Images']
     except:
         db['Reviews'] = {}
         reviews_dict = db['Reviews']
     db.close()
     product = products_dict.get(id)
+    
     review_list = []
     for review in reviews_dict.values():
         if review.get_product_id() == id:
@@ -1014,21 +1049,7 @@ def edit_partner(id):
 
     # Render the edit form
     return render_template('Editpartner.html', form=edit_partner_form, partner=partner)
-## Helper functions ##
-# SAVE IMAGE #
-def save_image(image):
-        random_hex = secrets.token_hex(8) #randomize filename
-        f_name, f_ext = os.path.splitext(image.filename) #split filename and extension
-        image_fn = random_hex + f_ext #combine random hex and extension
-        image_path = os.path.join(app.config['UPLOAD_FOLDER'], image_fn) #combine root path and image path
-        image.save(image_path) #save image to path, save function is under the werkzeug library
-        return image_fn
-    
-    
-def delete_image(image):
-    image_path = os.path.join(app.config['UPLOAD_FOLDER'], image)
-    if os.path.exists(image_path) and image != "default_product.png":
-        os.remove(image_path)
+
 
 if __name__ == '__main__':
     app.run(debug=True)

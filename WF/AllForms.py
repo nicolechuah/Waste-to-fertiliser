@@ -35,11 +35,11 @@ class DeleteAccountForm(FlaskForm):
 class ProductForm(Form):
     name = StringField('Product Name', [validators.Length(min=3, max=50, message="Product name must be 3-150 characters long"), validators.DataRequired
                                         (message="Please enter a product name.")])
-    image = FileField('Product Image', validators=[FileAllowed(['jpg', 'png', 'jpeg'],message="Only jpg, jpeg, png files are allowed.")])
+    images = FileField('Product Image', validators=[FileAllowed(['jpg', 'png', 'jpeg'],message="Only jpg, jpeg, png files are allowed.")])
     description = StringField('Product Description', [validators.Length(min=1, max=1000), validators.DataRequired
                                                       (message="Please enter a product description.")])
     qty = IntegerField('Quantity', [validators.NumberRange(min=0, max=100000), validators.DataRequired(message="Please enter a quantity.")])
-    selling_price = FloatField('Selling Price', [validators.DataRequired(message="Please enter a selling price."),validators.NumberRange(min=1, max=10000,message="Please enter a valid number")])
+    selling_price = FloatField('Selling Price', [validators.NumberRange(min=1, max=10000, message="Please enter a valid number"), validators.DataRequired(message="Please enter a selling price.")])
     cost_price = FloatField('Cost Price', [validators.NumberRange(min=1, max=10000), validators.DataRequired(message="Please enter a cost price.")])
     visible = BooleanField('Visible', [validators.Optional()], default=True)
 
