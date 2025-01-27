@@ -760,7 +760,7 @@ def view_product(id):
         reviews_dict = db['Reviews']
     db.close()
     product = products_dict.get(id)
-    review_list = []
+    review_list = [] 
     for review in reviews_dict.values():
         if review.get_product_id() == id:
             review_list.append(review)
@@ -796,6 +796,22 @@ def view_product(id):
   
 
 
+
+@app.route('/fwfinfo')
+def food_waste_friday():
+    return render_template('fwfinfo.html')
+
+@app.route('/foodcollectionprograminfo')
+def program():
+    return render_template('foodcollectionprograminfo.html')
+
+@app.route('/fwfinfo')
+def food_waste_friday():
+    return render_template('fwfinfo.html')
+
+@app.route('/foodcollectionprograminfo')
+def program():
+    return render_template('foodcollectionprograminfo.html')
 
 @app.route('/user_fwf', methods=['GET', 'POST'])
 def fwf_user():
@@ -940,6 +956,24 @@ def fwfuser_ADretrieve():
 
     return render_template('fwfuser_ADretrieve.html', count=len(fwfusers_list), fwfusers_list=fwfusers_list)
 
+## Helper functions ##
+# SAVE IMAGE #
+def save_image(image):
+        random_hex = secrets.token_hex(8) #randomize filename
+        f_name, f_ext = os.path.splitext(image.filename) #split filename and extension
+        image_fn = random_hex + f_ext #combine random hex and extension
+        image_path = os.path.join(app.config['UPLOAD_FOLDER'], image_fn) #combine root path and image path
+        image.save(image_path)
+        print(type(image))
+
+        return image_fn
+    
+    
+def delete_image(image):
+    image_path = os.path.join(app.config['UPLOAD_FOLDER'], image)
+    if os.path.exists(image_path) and image != "default_product.png":
+        os.remove(image_path)
+
 @app.route('/collectformR')
 def message():
     return render_template('collectformR.html')
@@ -1055,6 +1089,116 @@ def delete_image(image):
     image_path = os.path.join(app.config['UPLOAD_FOLDER'], image)
     if os.path.exists(image_path) and image != "default_product.png":
         os.remove(image_path)
+
+@app.route('/approve_partner/<int:id>')
+def approve_partner(id):
+    db = shelve.open('storage.db', 'w')
+    partner_dict = db.get('Collectusers', {})
+    approved_dict = db.get('Approvedusers', {})
+
+    partner = partner_dict.pop(id, None)  # Remove from pending
+    if partner:
+        approved_dict[id] = partner  # Add to approved
+
+    db['Collectusers'] = partner_dict
+    db['Approvedusers'] = approved_dict
+    db.close()
+
+    return redirect(url_for('Ad_collect'))
+
+@app.route('/reject_partner/<int:id>')
+def reject_partner(id):
+    db = shelve.open('storage.db', 'w')
+    partner_dict = db.get('Collectusers', {})
+    rejected_dict = db.get('Rejectedusers', {})
+
+    partner = partner_dict.pop(id, None)  # Remove from pending
+    if partner:
+        rejected_dict[id] = partner  # Add to rejected
+
+    db['Collectusers'] = partner_dict
+    db['Rejectedusers'] = rejected_dict
+    db.close()
+
+    return redirect(url_for('Ad_collect'))
+
+@app.route('/ApproveCollect', methods=['GET'])
+def approved_partners():
+    approved_dict = {}
+    try:
+        # Open the shelve database in read mode
+        db = shelve.open('storage.db', 'r')
+        approved_dict = db.get('Approvedusers', {})  # Retrieve only approved users
+    except Exception as e:
+        print(f"Error in retrieving data from storage.db: {e}")
+        approved_dict = {}  # Default to empty if any error occurs
+    finally:
+        db.close()
+
+    partners_list = []
+    for key, partner in approved_dict.items():
+        partners_list.append(partner)
+
+    # Render the Approved Partners page with the list of approved partners
+    return render_template('ApproveCollect.html', count=len(partners_list), partners_list=partners_list)
+
+
+
+
+@app.route('/approve_partner/<int:id>')
+def approve_partner(id):
+    db = shelve.open('storage.db', 'w')
+    partner_dict = db.get('Collectusers', {})
+    approved_dict = db.get('Approvedusers', {})
+
+    partner = partner_dict.pop(id, None)  # Remove from pending
+    if partner:
+        approved_dict[id] = partner  # Add to approved
+
+    db['Collectusers'] = partner_dict
+    db['Approvedusers'] = approved_dict
+    db.close()
+
+    return redirect(url_for('Ad_collect'))
+
+@app.route('/reject_partner/<int:id>')
+def reject_partner(id):
+    db = shelve.open('storage.db', 'w')
+    partner_dict = db.get('Collectusers', {})
+    rejected_dict = db.get('Rejectedusers', {})
+
+    partner = partner_dict.pop(id, None)  # Remove from pending
+    if partner:
+        rejected_dict[id] = partner  # Add to rejected
+
+    db['Collectusers'] = partner_dict
+    db['Rejectedusers'] = rejected_dict
+    db.close()
+
+    return redirect(url_for('Ad_collect'))
+
+@app.route('/ApproveCollect', methods=['GET'])
+def approved_partners():
+    approved_dict = {}
+    try:
+        # Open the shelve database in read mode
+        db = shelve.open('storage.db', 'r')
+        approved_dict = db.get('Approvedusers', {})  # Retrieve only approved users
+    except Exception as e:
+        print(f"Error in retrieving data from storage.db: {e}")
+        approved_dict = {}  # Default to empty if any error occurs
+    finally:
+        db.close()
+
+    partners_list = []
+    for key, partner in approved_dict.items():
+        partners_list.append(partner)
+
+    # Render the Approved Partners page with the list of approved partners
+    return render_template('ApproveCollect.html', count=len(partners_list), partners_list=partners_list)
+
+
+
 
 if __name__ == '__main__':
     app.run(debug=True)

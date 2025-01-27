@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+
+{% block title %}Admin - Answer FAQ{% endblock %}
+
+{% block content %}
+    <h1>Answer FAQ</h1>
+
+    <div class="card">
+        <div class="card-header">
+            <strong>Question:</strong> {{ faq.question }}
+        </div>
+        <div class="card-body">
+            <p><strong>Email:</strong> {{ faq.email }}</p>
+            <form method="POST">
+                <div class="form-group">
+                    <label for="answer">Your Answer:</label>
+                    <textarea name="answer" class="form-control" rows="4">{{ faq.answer or '' }}</textarea>
+                </div>
+                <button type="submit" class="btn btn-primary">Submit Answer</button>
+            </form>
+        </div>
+    </div>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            <div class="alert alert-success mt-4">
+                {% for category, message in messages %}
+                    <p>{{ message }}</p>
+                {% endfor %}
+            </div>
+        {% endif %}
+    {% endwith %}
+{% endblock %}

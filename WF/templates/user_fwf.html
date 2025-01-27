@@ -2,28 +2,77 @@
 {% block title %}FWF{% endblock %}
 {% block content %}
 {% from "includes/form_helper.html" import render_field %}
-<h1 class="display-4">Registration for Food Waste Friday</h1>
-<form method="POST" action="">
- <div class="form-group">
- {{ render_field(form.first_name, class="form-control") }}
- </div>
- <div class="form-group">
- {{ render_field(form.last_name, class="form-control") }}
- </div>
- <div class="form-group">
 
- {{ render_field(form.gender, class="form-control") }}
- </div>
-    <div class="form-group">
+<style>
+    /* Centering and sizing the form */
+    .form-container {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 80vh; /* Vertically center in the viewport */
+        padding: 1rem; /* Add padding for smaller screens */
+    }
 
- {{ render_field(form.email, class="form-control") }}
- </div>
- <div id="prof">
- <div class="form-group">
+    .form-card {
+        padding: 2rem;
+        border-radius: 10px;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+        background-color: #f9f9f9;
+        width: 60%; /* 60% of the screen width */
+        max-width: 800px; /* Prevent it from being too large on bigger screens */
+        min-width: 300px; /* Ensure it doesn't shrink too much on small screens */
+    }
 
- {{ render_field(form.remarks, class="form-control") }}
- </div>
- </div>
- <input type="submit" value="Submit" class="btn btn-primary"/>
-</form>
+    .form-card h1 {
+        text-align: center;
+        margin-bottom: 1.5rem;
+        color: #155724; /* Dark green for the title */
+    }
+
+    .form-control {
+        border: 1px solid #155724; /* Match with the dark green theme */
+        border-radius: 5px;
+    }
+
+    .form-control:focus {
+        box-shadow: 0 0 5px rgba(21, 87, 36, 0.5);
+        border-color: #218838;
+    }
+
+    .btn-primary {
+        background-color: #155724;
+        border-color: #155724;
+    }
+
+    .btn-primary:hover {
+        background-color: #218838;
+        border-color: #1c7430;
+    }
+</style>
+
+<div class="form-container">
+    <div class="form-card">
+        <h1 class="display-4">Registration for Food Waste Friday</h1>
+        <form method="POST" action="">
+            <div class="form-group">
+                {{ render_field(form.first_name, class="form-control") }}
+            </div>
+            <div class="form-group">
+                {{ render_field(form.last_name, class="form-control") }}
+            </div>
+            <div class="form-group">
+                {{ render_field(form.gender, class="form-control") }}
+            </div>
+            <div class="form-group">
+                {{ render_field(form.email, class="form-control") }}
+            </div>
+            <div id="prof" class="form-group">
+                {{ render_field(form.remarks, class="form-control") }}
+            </div>
+            <br>
+            <input type="submit" value="Submit" class="btn btn-primary w-100" />
+        </form>
+    </div>
+</div>
 {% endblock %}
+
