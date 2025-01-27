@@ -22,12 +22,9 @@ app = Flask(__name__)
 
 app.config['SECRET_KEY'] = 'd6691973382147ed2b8724aa19eb0720'
 app.config['UPLOAD_FOLDER'] = 'static/images'
-app.secret_key = 'secret_key_for_flash_messages'  # Required for flash messages and WTForms
+app.secret_key = 'secret_key_for_flash_messages'  
 
-DB_FILE_PATH = os.path.join(os.path.dirname(__file__), 'storage.db')
 
-def get_storage():
-    return shelve.open(DB_FILE_PATH, writeback=True)
 
 @app.route('/', methods=['GET', 'POST'])
 def home():
@@ -52,7 +49,7 @@ def home():
         if product_name:
             try:
                 quantity = 1
-                with get_storage() as db:
+                with shelve.open('storage.db', writeback=True) as db:
                     if 'cart' not in db:
                         db['cart'] = {'items': []}
 
@@ -72,7 +69,6 @@ def home():
                         })
 
                     db['cart']['items'] = cart_items
-                    db.sync()
                 flash(f"{product_name} successfully added to cart!", 'success')
             except Exception as e:
                 flash(f"Error adding product to cart: {e}", 'danger')
@@ -88,7 +84,7 @@ def products():
         if product_name:
             try:
                 quantity = 1
-                with get_storage() as db:
+                with shelve.open('storage.db', writeback=True) as db:
                     if 'cart' not in db:
                         db['cart'] = {'items': []}
 
@@ -108,19 +104,54 @@ def products():
                         })
 
                     db['cart']['items'] = cart_items
-                    db.sync()
                 flash(f"{product_name} successfully added to cart!", 'success')
             except Exception as e:
                 flash(f"Error adding product to cart: {e}", 'danger')
 
     return render_template('products.html', title="Products")
 
+@app.route('/buy-now', methods=['POST'])
+def buy_now():
+    product_name = request.form.get('product_name')
+    unit_price = float(request.form.get('unit_price', 0))
+
+    if product_name:
+        try:
+            quantity = 1
+            with shelve.open('storage.db', writeback=True) as db:
+                if 'cart' not in db:
+                    db['cart'] = {'items': []}
+
+                cart_items = db['cart']['items']
+
+                for item in cart_items:
+                    if item['name'] == product_name:
+                        item['quantity'] += quantity
+                        item['total_price'] = item['unit_price'] * item['quantity']
+                        break
+                else:
+                    cart_items.append({
+                        'name': product_name,
+                        'unit_price': unit_price,
+                        'quantity': quantity,
+                        'total_price': unit_price * quantity
+                    })
+
+                db['cart']['items'] = cart_items
+            
+            flash(f"{product_name} successfully added to cart!", 'success')
+            return redirect(url_for('checkout'))
+        except Exception as e:
+            flash(f"Error processing request: {e}", 'danger')
+    
+    return redirect(url_for('home'))
+
 @app.route('/cart', methods=['GET', 'POST'])
 def cart():
     cart_items = []
     overall_price = 0
 
-    with get_storage() as db:
+    with shelve.open('storage.db', writeback=True) as db:
         if 'cart' in db:
             cart_items = db['cart']['items']
 
@@ -150,7 +181,6 @@ def cart():
                 flash(f"{product_name} removed from cart.", 'info')
 
             db['cart']['items'] = cart_items
-            db.sync()
 
         overall_price = sum(item['total_price'] for item in cart_items)
 
@@ -167,11 +197,10 @@ def checkout():
             'address': form.address.data,
             'unit_number': form.unit_number.data
         }
-        with get_storage() as db:
+        with shelve.open('storage.db', writeback=True) as db:
             if 'delivery' not in db:
                 db['delivery'] = {'records': []}
             db['delivery']['records'].append(delivery_data)
-            db.sync()
         return redirect(url_for('payment'))
     return render_template('checkout.html', form=form, title="Checkout")
 
@@ -185,7 +214,7 @@ def payment():
             'expiry_date': form.expiry_date.data,
             'cvv': form.cvv.data
         }
-        with get_storage() as db:
+        with shelve.open('storage.db', writeback=True) as db:
             if 'payment' not in db:
                 db['payment'] = {'records': []}
             db['payment']['records'].append(payment_data)
@@ -194,7 +223,6 @@ def payment():
                 db['complete'] = {'items': []}
             db['complete']['items'].extend(db.get('cart', {}).get('items', []))
             db['cart'] = {'items': []}
-            db.sync()
 
         flash("Payment successfully processed!", 'success')
         return redirect(url_for('home'))
@@ -202,7 +230,7 @@ def payment():
 
 @app.route('/user')
 def user():
-    with get_storage() as db:
+    with shelve.open('storage.db', 'r') as db:
         complete_data = db.get('complete', {}).get('items', [])
         delivery_data = db.get('delivery', {}).get('records', [])
         payment_data = db.get('payment', {}).get('records', [])
@@ -212,7 +240,7 @@ def user():
 @app.route('/edit-delivery/<int:id>', methods=['GET', 'POST'])
 def edit_delivery(id):
     form = CheckoutForm()
-    with get_storage() as db:
+    with shelve.open('storage.db', writeback=True) as db:
         delivery_data = db.get('delivery', {}).get('records', [])
         if id >= len(delivery_data):
             flash("Invalid delivery record.", 'danger')
@@ -227,7 +255,6 @@ def edit_delivery(id):
                 'unit_number': form.unit_number.data
             }
             db['delivery']['records'] = delivery_data
-            db.sync()
             flash("Delivery details updated successfully.", 'success')
             return redirect(url_for('user'))
 
@@ -242,7 +269,7 @@ def edit_delivery(id):
 @app.route('/edit-payment/<int:id>', methods=['GET', 'POST'])
 def edit_payment(id):
     form = PaymentForm()
-    with get_storage() as db:
+    with shelve.open('storage.db', writeback=True) as db:
         payment_data = db.get('payment', {}).get('records', [])
         if id >= len(payment_data):
             flash("Invalid payment record.", 'danger')
@@ -256,7 +283,6 @@ def edit_payment(id):
                 'cvv': form.cvv.data
             }
             db['payment']['records'] = payment_data
-            db.sync()
             flash("Payment details updated successfully.", 'success')
             return redirect(url_for('user'))
 
@@ -619,49 +645,88 @@ def delete_product(id):
 
 @app.route('/view-product/<int:id>', methods=['GET', 'POST'])
 def view_product(id):
-    products_dict = {}
-    reviews_dict = {}
-    db = shelve.open('storage.db', 'c')
-    try:
-        products_dict = db['Products']
-        reviews_dict = db['Reviews']
-    except:
-        db['Reviews'] = {}
-        reviews_dict = db['Reviews']
-    db.close()
-    product = products_dict.get(id)
-    review_list = []
-    for review in reviews_dict.values():
-        if review.get_product_id() == id:
-            review_list.append(review)
+    with shelve.open('storage.db', 'c') as db:
+        products_dict = db.get('Products', {})
+        reviews_dict = db.get('Reviews', {})
+
+        product = products_dict.get(id)
+        review_list = [review for review in reviews_dict.values() if review.get_product_id() == id]
+
     review_form = ReviewForm()
-    if request.method == 'POST' and review_form.validate():
-        try:
-            author = session['username']
-        except:
-            author = "Anonymous"
-        rating = review_form.rating.data
-        comment = review_form.comment.data
-        date = datetime.today().strftime('%Y-%m-%d')
-        product_id = id
-        review_dict = {}
-        db = shelve.open('storage.db', 'c')
-        try:
-            review_dict = db['Reviews']
-            review_id = db['ReviewIDs']
-            Review.review_id = review_id
-        except:
-            print("Error in retrieving Reviews from storage.db")
-        review = Review(author, rating, comment, product_id,date)
-        review_dict[review.get_review_id()] = review
-        db['Reviews'] = review_dict
-        db['ReviewIDs'] = Review.review_id
-        db.close()
-        print(review)
-        flash('Review submitted!', 'success')
-        return redirect(url_for('view_product',_anchor='reviews', id=id))
-    return render_template('view-product.html', product=product, title = "View Product",
-                           review_form=review_form, review_list=review_list)
+
+    # Handle review submission
+    if request.method == 'POST' and 'rating' in request.form:
+        if review_form.validate():
+            try:
+                author = session.get('username', 'Anonymous')
+                rating = review_form.rating.data
+                comment = review_form.comment.data
+                date = datetime.today().strftime('%Y-%m-%d')
+                review_data = {
+                    'author': author,
+                    'rating': rating,
+                    'comment': comment,
+                    'product_id': id,
+                    'date': date
+                }
+
+                with shelve.open('storage.db', writeback=True) as db:
+                    if 'Reviews' not in db:
+                        db['Reviews'] = {}
+                    reviews_dict = db['Reviews']
+                    review_id = len(reviews_dict) + 1
+                    reviews_dict[review_id] = review_data
+                    db['Reviews'] = reviews_dict
+
+                flash('Review submitted!', 'success')
+                return redirect(url_for('view_product', id=id, _anchor='reviews'))
+            except Exception as e:
+                flash(f"Error submitting review: {e}", 'danger')
+
+    # Handle adding to cart
+    if request.method == 'POST' and ('product_name' in request.form or 'unit_price' in request.form):
+        product_name = request.form.get('product_name')
+        unit_price = float(request.form.get('unit_price', 0))
+
+        if product_name:
+            try:
+                quantity = 1
+                with shelve.open('storage.db', writeback=True) as db:
+                    if 'cart' not in db:
+                        db['cart'] = {'items': []}
+
+                    cart_items = db['cart']['items']
+
+                    for item in cart_items:
+                        if item['name'] == product_name:
+                            item['quantity'] += quantity
+                            item['total_price'] = item['unit_price'] * item['quantity']
+                            break
+                    else:
+                        cart_items.append({
+                            'name': product_name,
+                            'unit_price': unit_price,
+                            'quantity': quantity,
+                            'total_price': unit_price * quantity
+                        })
+
+                    db['cart']['items'] = cart_items
+                flash(f"{product_name} successfully added to cart!", 'success')
+
+                # Redirect to checkout if "Buy Now" was clicked
+                if 'buy_now' in request.form:
+                    return redirect(url_for('checkout'))
+            except Exception as e:
+                flash(f"Error adding product to cart: {e}", 'danger')
+
+    return render_template(
+        'view-product.html',
+        product=product,
+        title="View Product",
+        review_form=review_form,
+        review_list=review_list
+    )
+
     
     
 
