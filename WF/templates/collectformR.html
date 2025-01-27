@@ -1,9 +1,27 @@
 {% extends "base.html" %}
-{% block title %}Waste to Fertiliser -Confirmation For Joining Food Collection Program {% endblock %}
+
+{% block title %}Waste to Fertiliser - Confirmation For Joining Food Collection Program {% endblock %}
 
 {% block content %}
-<h2>Food Collection Program Confirmation</h2>
-<h3>Thank you for joining us!</h3>
-<h4>For more enquires and details, we will contact you via email.</h4>
+<div class="container my-5">
+    <div class="text-center">
+        <!-- Heading for Confirmation -->
+        <h2 class="display-4 text-success mb-4">Food Collection Program Confirmation</h2>
+        
+        <!-- Thank You Message -->
+        <h3 class="display-4 text-success mb-4">Thank you for joining us!</h3>
+        
+        <!-- Additional Information -->
+        <h4 class="text-muted mb-4">For more inquiries and details, we will contact you via email.</h4>
+
+        <!-- Alert Box with Friendly Message -->
+        <div class="alert alert-info">
+            <p class="mb-0">We're thrilled to have you as part of the food collection program! Keep an eye on your inbox for updates and instructions on how to get started.</p>
+        </div>
+
+        <!-- Return Home Button -->
+        <a href="{{ url_for('home') }}" class="btn btn-primary btn-lg mt-4">Return to Home</a>
+    </div>
+</div>
 
 {% endblock %}

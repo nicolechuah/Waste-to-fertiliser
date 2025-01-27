@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% block title %}Waste to Fertilizer - Food Collection Program{% endblock %}
+
+{% block content %}
+
+<div class="container mt-4" style="max-width: 80%; margin: 0 auto;">
+    <div class="row">
+
+        <!-- Main Content -->
+        <div class="col-md-9 mx-auto">
+            <div class="text-center mb-4">
+                <h1 style="color:rgb(35, 113, 35);">Food Waste Collection Program</h1>
+            </div>
+
+            <div class="row align-items-center mb-5">
+                <!-- Left Side: Text Content -->
+                <div>
+                    <h3 style="color:rgb(35, 113, 35);">Aims and Goals</h3>
+                    <p style="color:rgb(32, 136, 32);">Our food waste collection program aims to reduce food waste by partnering with local businesses, restaurants, and individuals to collect excess, unsold, or expired food. This initiative helps divert food waste from landfills and repurposes it into sustainable products, such as organic fertilizers for gardening. By joining this effort, participants contribute to a circular economy, promoting environmental sustainability while supporting our mission to create eco-friendly solutions from food waste.</p>
+
+                    <h3 style="color:rgb(35, 113, 35);">Types of Food Waste Collected</h3>
+                    <p style="color:rgb(35, 113, 35);">We accept a range of food waste including organic waste like fruit and vegetable scraps, coffee grounds, and eggshells, as well as leftovers from meals, prepared food, and catering waste. Additionally, we collect packaging waste such as containers when available. This diverse range of waste types is then repurposed into sustainable products, such as fertilizers, contributing to environmental sustainability.</p>
+
+                    <h3 style="color:rgb(35, 113, 35);">Collection Method</h3>
+                    <p style="color:rgb(35, 113, 35);">Our food waste collection program offers scheduled pick-up services for participating businesses, restaurants, and individuals. Alternatively, participants can drop off their food waste at designated locations during specified hours of operation.</p>
+                </div>
+            </div>
+
+            <div class="mt-5">
+                <h3 style="color:rgb(35, 113, 35);">Terms & Conditions</h3>
+                <ul class="list-group" style="color:rgb(35, 113, 35);">
+                    <li class="list-group-item" style="color:rgb(35, 113, 35);">
+                        <strong>Eligibility:</strong> Participants must be businesses or individuals within the specified service area who agree to separate food waste from other waste materials.
+                    </li>
+                    <li class="list-group-item" style="color:rgb(35, 113, 35);">
+                        <strong>Accepted Waste:</strong> Only food waste that meets the program's guidelines (e.g., fruit and vegetable scraps, leftovers) will be collected. Non-food items and non-compostable waste are excluded.
+                    </li>
+                    <li class="list-group-item" style="color:rgb(35, 113, 35);">
+                        <strong>Collection Schedule:</strong> Participants are responsible for adhering to the designated collection dates and times. Failure to do so may result in missed collections.
+                    </li>
+                    <li class="list-group-item" style="color:rgb(35, 113, 35);">
+                        <strong>Liability:</strong> The program is not responsible for damages or losses arising from food waste left outside or improperly packaged for collection.
+                    </li>
+                </ul>
+
+                <div class="text-center mt-4">
+                    <a href="{{ url_for('collect_food') }}" class="btn btn-success btn-lg">Join Our Food Waste Program</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

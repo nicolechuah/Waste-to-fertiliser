@@ -1,9 +1,69 @@
 {% extends "base.html" %}
-{% block title %}Waste to Fertiliser - Event Registration Confirmation{% endblock %}
+{% block title %}Waste to Fertilizer - Event Registration Confirmation{% endblock %}
 
 {% block content %}
-<h2>Event Registration Confirmation</h2>
-<h3>Thank you for registering! You're all set to attend the event.</h3>
-<h4>For more details or any changes we will contact you via email.</h4>
+<style>
+    /* Center and style the content */
+    .confirmation-container {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 80vh; /* Vertically center in the viewport */
+        background-color: #f9f9f9; /* Light background for better readability */
+        padding: 2rem; /* Add padding for spacing */
+    }
 
+    .confirmation-card {
+        text-align: center;
+        padding: 2rem;
+        background-color: #ffffff;
+        border-radius: 10px;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1); /* Subtle shadow for depth */
+        max-width: 600px; /* Limit the width */
+        width: 100%; /* Responsive sizing */
+        border: 1px solid #155724; /* Dark green border */
+    }
+
+    .confirmation-card h2 {
+        color: #155724; /* Dark green for the title */
+        font-size: 2rem;
+        margin-bottom: 1rem;
+    }
+
+    .confirmation-card h3 {
+        color: #218838; /* Lighter green for the subtitle */
+        font-size: 1.5rem;
+        margin-bottom: 1rem;
+    }
+
+    .confirmation-card h4 {
+        color: #6c757d; /* Muted grey for the additional info */
+        font-size: 1.2rem;
+        margin-bottom: 2rem; /* Add spacing between text and link */
+    }
+
+    .redirect-link {
+        text-decoration: none;
+        color: #ffffff; /* White text for contrast */
+        background-color: #155724; /* Dark green background */
+        padding: 0.5rem 1.5rem; /* Padding for the button */
+        border-radius: 5px;
+        font-size: 1rem;
+        font-weight: bold;
+        transition: background-color 0.3s ease;
+    }
+
+    .redirect-link:hover {
+        background-color: #218838; /* Lighter green on hover */
+    }
+</style>
+
+<div class="confirmation-container">
+    <div class="confirmation-card">
+        <h2>Event Registration Confirmation</h2>
+        <h3>Thank you for registering! You're all set to attend the event.</h3>
+        <h4>For more details or any changes, we will contact you via email.</h4>
+        <a href="{{ url_for('food_waste_friday') }}" class="redirect-link">Back to event detail</a>
+    </div>
+</div>
 {% endblock %}

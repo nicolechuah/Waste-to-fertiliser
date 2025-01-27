@@ -775,92 +775,69 @@ def delete_product(id):
 
 @app.route('/view-product/<int:id>', methods=['GET', 'POST'])
 def view_product(id):
-    with shelve.open('storage.db', 'c') as db:
-        products_dict = db.get('Products', {})
-        reviews_dict = db.get('Reviews', {})
-
-        product = products_dict.get(id)
-        review_list = [review for review in reviews_dict.values() if review.get_product_id() == id]
-
+    products_dict = {}
+    reviews_dict = {}
+    db = shelve.open('storage.db', 'c')
+    try:
+        products_dict = db['Products']
+        reviews_dict = db['Reviews']
+    except:
+        db['Reviews'] = {}
+        reviews_dict = db['Reviews']
+    db.close()
+    product = products_dict.get(id)
+    review_list = [] 
+    for review in reviews_dict.values():
+        if review.get_product_id() == id:
+            review_list.append(review)
     review_form = ReviewForm()
-
-    # Handle review submission
-    if request.method == 'POST' and 'rating' in request.form:
-        if review_form.validate():
-            try:
-                author = session.get('username', 'Anonymous')
-                rating = review_form.rating.data
-                comment = review_form.comment.data
-                date = datetime.today().strftime('%Y-%m-%d')
-                review_data = {
-                    'author': author,
-                    'rating': rating,
-                    'comment': comment,
-                    'product_id': id,
-                    'date': date
-                }
-
-                with shelve.open('storage.db', writeback=True) as db:
-                    if 'Reviews' not in db:
-                        db['Reviews'] = {}
-                    reviews_dict = db['Reviews']
-                    review_id = len(reviews_dict) + 1
-                    reviews_dict[review_id] = review_data
-                    db['Reviews'] = reviews_dict
-
-                flash('Review submitted!', 'success')
-                return redirect(url_for('view_product', id=id, _anchor='reviews'))
-            except Exception as e:
-                flash(f"Error submitting review: {e}", 'danger')
-
-    # Handle adding to cart
-    if request.method == 'POST' and ('product_name' in request.form or 'unit_price' in request.form):
-        product_name = request.form.get('product_name')
-        unit_price = float(request.form.get('unit_price', 0))
-
-        if product_name:
-            try:
-                quantity = 1
-                with shelve.open('storage.db', writeback=True) as db:
-                    if 'cart' not in db:
-                        db['cart'] = {'items': []}
-
-                    cart_items = db['cart']['items']
-
-                    for item in cart_items:
-                        if item['name'] == product_name:
-                            item['quantity'] += quantity
-                            item['total_price'] = item['unit_price'] * item['quantity']
-                            break
-                    else:
-                        cart_items.append({
-                            'name': product_name,
-                            'unit_price': unit_price,
-                            'quantity': quantity,
-                            'total_price': unit_price * quantity
-                        })
-
-                    db['cart']['items'] = cart_items
-                flash(f"{product_name} successfully added to cart!", 'success')
-
-                # Redirect to checkout if "Buy Now" was clicked
-                if 'buy_now' in request.form:
-                    return redirect(url_for('checkout'))
-            except Exception as e:
-                flash(f"Error adding product to cart: {e}", 'danger')
-
-    return render_template(
-        'view-product.html',
-        product=product,
-        title="View Product",
-        review_form=review_form,
-        review_list=review_list
-    )
-
+    if request.method == 'POST' and review_form.validate():
+        try:
+            author = session['username']
+        except:
+            author = "Anonymous"
+        rating = review_form.rating.data
+        comment = review_form.comment.data
+        date = datetime.today().strftime('%Y-%m-%d')
+        product_id = id
+        review_dict = {}
+        db = shelve.open('storage.db', 'c')
+        try:
+            review_dict = db['Reviews']
+            review_id = db['ReviewIDs']
+            Review.review_id = review_id
+        except:
+            print("Error in retrieving Reviews from storage.db")
+        review = Review(author, rating, comment, product_id,date)
+        review_dict[review.get_review_id()] = review
+        db['Reviews'] = review_dict
+        db['ReviewIDs'] = Review.review_id
+        db.close()
+        print(review)
+        flash('Review submitted!', 'success')
+        return redirect(url_for('view_product',_anchor='reviews', id=id))
+    return render_template('view-product.html', product=product, title = "View Product",
+                           review_form=review_form, review_list=review_list)
     
   
 
 
+
+@app.route('/fwfinfo')
+def food_waste_friday():
+    return render_template('fwfinfo.html')
+
+@app.route('/foodcollectionprograminfo')
+def program():
+    return render_template('foodcollectionprograminfo.html')
+
+@app.route('/fwfinfo')
+def food_waste_friday():
+    return render_template('fwfinfo.html')
+
+@app.route('/foodcollectionprograminfo')
+def program():
+    return render_template('foodcollectionprograminfo.html')
 
 @app.route('/user_fwf', methods=['GET', 'POST'])
 def fwf_user():
@@ -1005,6 +982,24 @@ def fwfuser_ADretrieve():
 
     return render_template('fwfuser_ADretrieve.html', count=len(fwfusers_list), fwfusers_list=fwfusers_list)
 
+## Helper functions ##
+# SAVE IMAGE #
+def save_image(image):
+        random_hex = secrets.token_hex(8) #randomize filename
+        f_name, f_ext = os.path.splitext(image.filename) #split filename and extension
+        image_fn = random_hex + f_ext #combine random hex and extension
+        image_path = os.path.join(app.config['UPLOAD_FOLDER'], image_fn) #combine root path and image path
+        image.save(image_path)
+        print(type(image))
+
+        return image_fn
+    
+    
+def delete_image(image):
+    image_path = os.path.join(app.config['UPLOAD_FOLDER'], image)
+    if os.path.exists(image_path) and image != "default_product.png":
+        os.remove(image_path)
+
 @app.route('/collectformR')
 def message():
     return render_template('collectformR.html')
@@ -1120,6 +1115,116 @@ def delete_image(image):
     image_path = os.path.join(app.config['UPLOAD_FOLDER'], image)
     if os.path.exists(image_path) and image != "default_product.png":
         os.remove(image_path)
+
+@app.route('/approve_partner/<int:id>')
+def approve_partner(id):
+    db = shelve.open('storage.db', 'w')
+    partner_dict = db.get('Collectusers', {})
+    approved_dict = db.get('Approvedusers', {})
+
+    partner = partner_dict.pop(id, None)  # Remove from pending
+    if partner:
+        approved_dict[id] = partner  # Add to approved
+
+    db['Collectusers'] = partner_dict
+    db['Approvedusers'] = approved_dict
+    db.close()
+
+    return redirect(url_for('Ad_collect'))
+
+@app.route('/reject_partner/<int:id>')
+def reject_partner(id):
+    db = shelve.open('storage.db', 'w')
+    partner_dict = db.get('Collectusers', {})
+    rejected_dict = db.get('Rejectedusers', {})
+
+    partner = partner_dict.pop(id, None)  # Remove from pending
+    if partner:
+        rejected_dict[id] = partner  # Add to rejected
+
+    db['Collectusers'] = partner_dict
+    db['Rejectedusers'] = rejected_dict
+    db.close()
+
+    return redirect(url_for('Ad_collect'))
+
+@app.route('/ApproveCollect', methods=['GET'])
+def approved_partners():
+    approved_dict = {}
+    try:
+        # Open the shelve database in read mode
+        db = shelve.open('storage.db', 'r')
+        approved_dict = db.get('Approvedusers', {})  # Retrieve only approved users
+    except Exception as e:
+        print(f"Error in retrieving data from storage.db: {e}")
+        approved_dict = {}  # Default to empty if any error occurs
+    finally:
+        db.close()
+
+    partners_list = []
+    for key, partner in approved_dict.items():
+        partners_list.append(partner)
+
+    # Render the Approved Partners page with the list of approved partners
+    return render_template('ApproveCollect.html', count=len(partners_list), partners_list=partners_list)
+
+
+
+
+@app.route('/approve_partner/<int:id>')
+def approve_partner(id):
+    db = shelve.open('storage.db', 'w')
+    partner_dict = db.get('Collectusers', {})
+    approved_dict = db.get('Approvedusers', {})
+
+    partner = partner_dict.pop(id, None)  # Remove from pending
+    if partner:
+        approved_dict[id] = partner  # Add to approved
+
+    db['Collectusers'] = partner_dict
+    db['Approvedusers'] = approved_dict
+    db.close()
+
+    return redirect(url_for('Ad_collect'))
+
+@app.route('/reject_partner/<int:id>')
+def reject_partner(id):
+    db = shelve.open('storage.db', 'w')
+    partner_dict = db.get('Collectusers', {})
+    rejected_dict = db.get('Rejectedusers', {})
+
+    partner = partner_dict.pop(id, None)  # Remove from pending
+    if partner:
+        rejected_dict[id] = partner  # Add to rejected
+
+    db['Collectusers'] = partner_dict
+    db['Rejectedusers'] = rejected_dict
+    db.close()
+
+    return redirect(url_for('Ad_collect'))
+
+@app.route('/ApproveCollect', methods=['GET'])
+def approved_partners():
+    approved_dict = {}
+    try:
+        # Open the shelve database in read mode
+        db = shelve.open('storage.db', 'r')
+        approved_dict = db.get('Approvedusers', {})  # Retrieve only approved users
+    except Exception as e:
+        print(f"Error in retrieving data from storage.db: {e}")
+        approved_dict = {}  # Default to empty if any error occurs
+    finally:
+        db.close()
+
+    partners_list = []
+    for key, partner in approved_dict.items():
+        partners_list.append(partner)
+
+    # Render the Approved Partners page with the list of approved partners
+    return render_template('ApproveCollect.html', count=len(partners_list), partners_list=partners_list)
+
+
+
 
 if __name__ == '__main__':
     app.run(debug=True)
