@@ -580,6 +580,26 @@ def update_product(id):
 
 @app.route('/delete-image/<int:product_id>/<int:image_id>', methods=['POST', 'GET'])
 def delete_image(product_id, image_id):
+    db = shelve.open('storage.db', 'w')
+    try:
+        images_dict = db['Images']
+        products_dict = db['Products']
+    except:
+        print("Error in retrieving Images from storage.db")
+        db['Images'] = {}
+        images_dict = db['Images']
+    product = products_dict.get(product_id)
+    product.remove_image_id(image_id)
+    image = images_dict.get(image_id)
+    try:
+        images_dict.pop(image_id)
+        Image.delete_image(image.get_image())
+    except:
+        print(f"Error in deleting image {image} storage.db")
+    db['Images'] = images_dict
+    db['Products'] = products_dict
+    db.close()
+    flash(f'Image deleted!', 'success')
     return redirect(url_for('update_product', id=product_id)) # reroute to update product page
 
 
