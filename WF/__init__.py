@@ -30,12 +30,15 @@ ALLOW_INIT_ADMIN = True  # Set to True to allow the creation of an initial admin
 def home():
     try:
         db = shelve.open('storage.db', 'r')
+        products_dict = db['Products']
+        image_dict = db['Images']
     except:
         print("Error in retrieving data from storage.db")
         db = shelve.open('storage.db', 'c')
         db['Products'] = {}
+        products_dict = db['Products']
         db['Images'] = {}
-    products_dict = db['Products']
+        image_dict = db['Images']
     db.close()
 
     products_list = []
@@ -826,7 +829,7 @@ def view_product(id):
         if review.get_product_id() == id:
             review_list.append(review)
     review_form = ReviewForm()
-    if request.method == 'POST' and review_form.validate():
+    if request.method == 'POST'and request.form.get('rating'):
         try:
             author = session['username']
         except:
@@ -850,7 +853,6 @@ def view_product(id):
         db.close()
         print(review)
         flash('Review submitted!', 'success')
-        return redirect(url_for('view_product',_anchor='reviews', id=id))
     if request.method == 'POST' and request.form.get('product_name'):
         product_name = request.form.get('product_name')
         unit_price = float(request.form.get('unit_price', 0))
