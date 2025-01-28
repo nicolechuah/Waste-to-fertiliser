@@ -559,7 +559,10 @@ def update_product(id):
           # idk why but theres type error if i dont fill it?
         products_dict = {}
         db = shelve.open('storage.db', 'r')
-        products_dict = db['Products']
+        try:
+            products_dict = db['Products']
+        except:
+            print("Error in retrieving Products from storage.db")
         db.close()
         
         # populate form with existing data
@@ -574,6 +577,12 @@ def update_product(id):
         
         return render_template('update-product.html', form=update_product,
                                title = "Update Product", product = product)
+
+@app.route('/delete-image/<int:product_id>/<int:image_id>', methods=['POST', 'GET'])
+def delete_image(product_id, image_id):
+    return redirect(url_for('update_product', id=product_id)) # reroute to update product page
+
+
 @app.route('/delete-product/<int:id>', methods=['POST'])
 def delete_product(id):
     # stored variable id is passed from delete button @ product-management
@@ -886,6 +895,14 @@ def edit_partner(id):
     # Render the edit form
     return render_template('Editpartner.html', form=edit_partner_form, partner=partner)
 
+def upload_default_image():
+    db = shelve.open('storage.db', 'c')
+    image_dict = {1: "default_product.png"}
+    db['Images'] = image_dict
+    print(db['Images'])
+    db.close()
+
+upload_default_image()
 
 if __name__ == '__main__':
     app.run(debug=True)

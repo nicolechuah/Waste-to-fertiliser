@@ -16,7 +16,7 @@ class Product():
             self.__images_id = [1] # default image ID
         else:
             self.__images_id = images # a list object of IDs
-        self.__reviews = [] # a list object of IDs
+
     
 
     
@@ -79,6 +79,18 @@ class Product():
                 else:
                     print(f"Image ID {image_id} not found in the database.")
         return images
+    
+    def get_images_with_id(self):
+        with shelve.open('storage.db') as db:
+            image_db = db['Images']
+            images_with_id = []
+            for image_id in self.__images_id:
+                if image_id in image_db:
+                    image = image_db[image_id]
+                    images_with_id.append((image.get_image(), image_id))
+                else:
+                    print(f"Image ID {image_id} not found in the database.")
+        return images_with_id
 
     def delete_all_images(self): #use only when deleting a product object
         with shelve.open('storage.db') as db:
@@ -89,6 +101,10 @@ class Product():
                     image.delete_image(image.get_image())
                     del image_db[image_id]
             db['Images'] = image_db
+            
+    def add_default_image(self):
+        if len(self.__images_id) == 0:
+            self.__images_id.append(1)
     
     def remove_default_image(self):
         if 1 in self.__images_id and len(self.__images_id) > 1:

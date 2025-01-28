@@ -26,8 +26,14 @@
     	<tr>
 			
 			<td>
+				{% if product.get_images() %}
 				<img src="{{ url_for('static', filename='images/' +  product.get_images()[0]) }}" 
-				alt="{{ product.get_name() }}" style="width: 50px; height: 50px;">
+				alt="{{ product.get_name() }}" style="width: 100px; height: 100px;">
+				{% else %}
+				<img src="{{ url_for('static', filename='images/default_product.png') }}"
+				 alt="{{ product.get_name() }}" style="width: 100px; height: 100px;">
+				{% endif %}
+
 			</td>
         	<td>{{product.get_product_id()}}</td>
         	<td>{{product.get_name()}}</td>
