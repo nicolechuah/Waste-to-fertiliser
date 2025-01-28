@@ -412,7 +412,7 @@ def create_product():
     if request.method == 'POST' and create_product.validate():
         for uploaded_image in request.files.getlist('images'):
             if uploaded_image.filename == '': # if no image uploaded
-                saved_image = 'default_product.png'
+                saved_image = Image('default_product.png')
             else:
                 saved_image = Image.save_image(uploaded_image)
             image_dict = {}
@@ -590,16 +590,21 @@ def delete_image(product_id, image_id):
         images_dict = db['Images']
     product = products_dict.get(product_id)
     product.remove_image_id(image_id)
+    product.add_default_image()
     image = images_dict.get(image_id)
-    try:
-        images_dict.pop(image_id)
-        Image.delete_image(image.get_image())
-    except:
-        print(f"Error in deleting image {image} storage.db")
-    db['Images'] = images_dict
-    db['Products'] = products_dict
-    db.close()
-    flash(f'Image deleted!', 'success')
+    if image_id != 1:
+        try:
+            images_dict.pop(image_id)
+            Image.delete_image(image.get_image())
+        except:
+            print(f"Error in deleting image {image} storage.db")
+        db['Images'] = images_dict
+        db['Products'] = products_dict
+        db.close()
+        print(product)
+        flash(f'Image deleted!', 'success')
+    else:
+        flash(f'Add another image to delete the default image!', 'danger')
     return redirect(url_for('update_product', id=product_id)) # reroute to update product page
 
 
@@ -917,7 +922,7 @@ def edit_partner(id):
 
 def upload_default_image():
     db = shelve.open('storage.db', 'c')
-    image_dict = {1: "default_product.png"}
+    image_dict = {1: Image('default_product.png')}
     db['Images'] = image_dict
     print(db['Images'])
     db.close()

@@ -96,7 +96,7 @@ class Product():
         with shelve.open('storage.db') as db:
             image_db = db['Images']
             for image_id in self.__images_id:
-                if image_id in image_db:
+                if image_id in image_db and image_id != 1: # make sure to not delete the default image
                     image = image_db[image_id]  # retrieve that image object
                     image.delete_image(image.get_image())
                     del image_db[image_id]
