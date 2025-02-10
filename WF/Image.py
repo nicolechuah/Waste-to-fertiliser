@@ -3,10 +3,6 @@ import secrets
 from flask import current_app as app
 import shelve
 
-
-    
-
-
 class Image:
     Image_ID = 3
     def __init__(self, image): #image name is still the file name

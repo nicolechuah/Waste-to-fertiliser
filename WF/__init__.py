@@ -433,6 +433,8 @@ def create_product():
             db['ImageIDs'] = Image.Image_ID
             db.close()
 
+
+
         product_dict = {}
         db = shelve.open('storage.db', 'c')
         
@@ -454,6 +456,11 @@ def create_product():
         flash(f'Product {create_product.name.data} created!', 'success')
         return redirect(url_for('product_management'))
     return render_template('create-product.html', form=create_product, title = "Create Product")
+
+@app.route('/import-products', methods=['GET', 'POST'])
+def import_products():
+    pass
+
 
 
 

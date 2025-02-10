@@ -32,6 +32,8 @@ class AccountForm(FlaskForm):
 class DeleteAccountForm(FlaskForm):
     submit = SubmitField('Delete Account')
     
+category_tuple = [('Uncategorized', 'Uncategorized'), ('Fruits', 'Fruits'), ('Vegetables', 'Vegetables'), ('Meat', 'Meat'), ('Seafood', 'Seafood'), ('Dairy', 'Dairy'), ('Beverages', 'Beverages'), ('Snacks', 'Snacks'), ('Bakery', 'Bakery'), ('Frozen', 'Frozen'), ('Canned', 'Canned'), ('Others', 'Others')]
+
 class ProductForm(Form):
     name = StringField('Product Name', [validators.Length(min=3, max=50, message="Product name must be 3-150 characters long"), validators.DataRequired
                                         (message="Please enter a product name.")])
@@ -42,6 +44,7 @@ class ProductForm(Form):
     selling_price = FloatField('Selling Price', [validators.NumberRange(min=1, max=10000, message="Please enter a valid number"), validators.DataRequired(message="Please enter a selling price.")])
     cost_price = FloatField('Cost Price', [validators.NumberRange(min=1, max=10000), validators.DataRequired(message="Please enter a cost price.")])
     visible = BooleanField('Visible', [validators.Optional()], default=True)
+    
 
 class InventoryForm(FlaskForm):
     qty = IntegerField('Quantity', [validators.NumberRange(min=0, max=100000), validators.DataRequired(message="Please enter a quantity.")])
