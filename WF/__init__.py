@@ -16,7 +16,6 @@ import shelve
 from Fwfuser import FWFUser
 from Collect import Collect
 from Image import Image
-from Category import Category
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'd6691973382147ed2b8724aa19eb0720'
@@ -404,9 +403,6 @@ def delete_account():
     flash('Account deletion failed. Please try again.', 'danger')
     return redirect(url_for('account'))
 
-@app.route('/create-category', methods=['GET', 'POST'])
-def create_category():
-    pass
 
 @app.route('/create-product', methods=['GET', 'POST'])
 def create_product():
