@@ -32,7 +32,6 @@ class AccountForm(FlaskForm):
 class DeleteAccountForm(FlaskForm):
     submit = SubmitField('Delete Account')
     
-category_tuple = [('Uncategorized', 'Uncategorized'), ('Fruits', 'Fruits'), ('Vegetables', 'Vegetables'), ('Meat', 'Meat'), ('Seafood', 'Seafood'), ('Dairy', 'Dairy'), ('Beverages', 'Beverages'), ('Snacks', 'Snacks'), ('Bakery', 'Bakery'), ('Frozen', 'Frozen'), ('Canned', 'Canned'), ('Others', 'Others')]
 
 class ProductForm(Form):
     name = StringField('Product Name', [validators.Length(min=3, max=50, message="Product name must be 3-150 characters long"), validators.DataRequired

@@ -17,7 +17,6 @@ class Product():
         else:
             self.__images_id = images # a list object of IDs
         
-        self.__categories = [1] # default category ID
     
 
     
@@ -111,36 +110,6 @@ class Product():
         if 1 in self.__images_id and len(self.__images_id) > 1:
             self.__images_id.remove(1)
     
-    
-    def get_category_ids(self):
-        return self.__categories
-
-    def get_category_names(self):
-        with shelve.open('storage.db') as db:
-            category_db = db['Categories']
-            categories = []
-            for category_id in self.__categories:
-                if category_id in category_db:
-                    category = category_db[category_id]
-                    categories.append(category.get_name())
-                else:
-                    print(f"Category ID {category_id} not found in the database.")
-        return categories
-        
-
-    def add_category_id(self, category_id):
-        self.__categories.append(category_id)
-        
-    def add_default_category(self):
-        if len(self.__categories) == 0:
-            self.__categories.append(1)
-            
-    def remove_default_category(self):
-        if 1 in self.__categories and len(self.__categories) > 1:
-            self.__categories.remove(1)
-            
-    def remove_category_id(self, category_id):
-        self.__categories.remove(category_id)
     
     
     def get_average_rating(self):
