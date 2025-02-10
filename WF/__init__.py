@@ -1,6 +1,6 @@
 from flask import Flask, render_template, url_for, flash, redirect, request, session
 from AllForms import RegistrationForm, LoginForm, AccountForm, ProductForm, UserFWF, CheckoutForm, PaymentForm
-from AllForms import CollectFood,ReviewForm, InventoryForm, CategoryForm
+from AllForms import CollectFood,ReviewForm, InventoryForm
 from flask_bcrypt import Bcrypt
 from flask_login import login_user, current_user, logout_user, login_required, LoginManager
 
@@ -406,27 +406,7 @@ def delete_account():
 
 @app.route('/create-category', methods=['GET', 'POST'])
 def create_category():
-    create_category = CategoryForm(request.form)
-    if request.method == 'POST' and create_category.validate():
-        category_dict = {}
-        db = shelve.open('storage.db', 'c')
-        try:
-            category_dict = db['Categories']
-            category_id = db['CategoryIDs']
-            Category.CategoryID = category_id
-        except:
-            print("Error in retrieving Categories from storage.db")
-            db['Categories'] = {}
-        category = Category(create_category.name.data)
-        category_dict[category.get_category_id()] = category
-        db['Categories'] = category_dict
-        db['CategoryIDs'] = Category.CategoryID
-        db.close()
-        flash(f'Category {create_category.name.data} created!', 'success')
-        return redirect(url_for('product_management'))
-    return render_template('create-category.html', form=create_category, title = "Create Category")
-
-
+    pass
 
 @app.route('/create-product', methods=['GET', 'POST'])
 def create_product():
@@ -498,7 +478,7 @@ def product_management():
         print("Error in retrieving data from storage.db")
         db = shelve.open('storage.db', 'c')
         db['Products'] = {}
-        products_dict = db['Products']
+    products_dict = db['Products']
     db.close()
     
     products_list = []
