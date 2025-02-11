@@ -50,6 +50,7 @@
 <div class="container text-center mx-auto">
     <h1 class="pt-5 pb-2 mx-auto" style="width: 250px;" id="products">Our Products</h1>
   
+    <!-- Flex container to center buttons -->
     <div class="d-flex justify-content-center flex-wrap gap-2 pb-5">
         {% for val, label in cat_list %}
         <a href="{{ url_for('category', category=val) }}#products">
@@ -62,7 +63,7 @@
   </div>
   
 
-<div class="d-flex flex-wrap justify-content-start custom-container" id="products">
+<div class="d-flex flex-wrap justify-content-start custom-container" >
     {% if products_list|length == 0 %}
         <h1>No products found</h1>
     {% endif %}
@@ -95,6 +96,4 @@
     {% endfor %}
 </div>
 
-
-    
-{% endblock %}
+{% endblock content  %}

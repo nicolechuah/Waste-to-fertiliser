@@ -4,7 +4,7 @@ from AllForms import CollectFood,ReviewForm, InventoryForm
 from flask_bcrypt import Bcrypt
 from flask_login import login_user, current_user, logout_user, login_required, LoginManager
 
-import shelve, User, create_products
+import shelve, User, initial_settings
 from PIL import Image
 from datetime import datetime
 from werkzeug.utils import secure_filename
@@ -31,7 +31,7 @@ def home():
     try:
         db = shelve.open('storage.db', 'r')
         products_dict = db['Products']
-        image_dict = db['Images']
+        cat_dict = db['Categories']
     except:
         print("Error in retrieving data from storage.db")
         db = shelve.open('storage.db', 'c')
@@ -39,7 +39,12 @@ def home():
         products_dict = db['Products']
         db['Images'] = {}
         image_dict = db['Images']
+        db['Categories'] = {}
+        cat_dict = db['Categories']
     db.close()
+    cat_list = []
+    for val, label in cat_dict.items():
+        cat_list.append((val, label))
 
     products_list = []
     for key in products_dict:
@@ -78,7 +83,35 @@ def home():
             except Exception as e:
                 flash(f"Error adding product to cart: {e}", 'danger')
 
-    return render_template('home.html', products_list=products_list, title="Home") 
+    return render_template('home.html', products_list=products_list, cat_list = cat_list, title="Home") 
+
+@app.route('/category/<category>', methods=['GET'])
+def category(category):
+    try:
+        db = shelve.open('storage.db', 'r')
+        products_dict = db.get('Products', {})
+        cat_dict = db['Categories']
+    except:
+        print("Error retrieving data from storage.db")
+        products_dict = {}
+    finally:
+        db.close()
+    products_list =[]
+    for key, value in products_dict.items():
+        print(value)
+        list_of_cat = value.get_category()
+        print(f"list of cat: {list_of_cat}")
+        for cat in list_of_cat:
+            if cat == category:
+                products_list.append(value)
+    cat_list = []
+    for val, label in cat_dict.items():
+        cat_list.append((val, label))
+
+    # Render a category page with the filtered products
+    return render_template('category.html', products_list=products_list, cat_list = cat_list, title=f"{category.capitalize()}")
+
+    
                         
 @app.route('/products', methods=['GET', 'POST'])
 def products():
@@ -1252,10 +1285,8 @@ def approved_partners():
 
 def run():
     if __name__ == '__main__':
-        db = shelve.open('storage.db', 'c')
-        db['Images'] = {1: "images/default_product.png"}
-        db.close()
-        create_products.insert_to_db(create_products.product_list)
+        initial_settings.insert_all()
+        
         app.run(debug=True)
 
 run()

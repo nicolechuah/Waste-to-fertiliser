@@ -1,4 +1,4 @@
-'Images', (0, 46)
-'Products', (1024, 11099)
-'Users', (12288, 196)
-'UserIDs', (12800, 5)
+'Products', (512, 11099)
+'Categories', (11776, 183)
+'Images', (12288, 46)
+'Reviews', (12800, 5)

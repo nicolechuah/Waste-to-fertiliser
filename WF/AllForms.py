@@ -38,7 +38,7 @@ class MultiCheckboxField(SelectMultipleField):
     option_widget = widgets.CheckboxInput()
 
 categories = [("All", "All"),("Fertiliser", "Fertiliser"),("Seeds", "Seeds"),
-              ("Tools", "Gardening Tools"),("Pots", "Pots & Planters"),("Watering Systems", "Watering Systems"), ("Kits", "Gardening Kits")]
+              ("Tools", "Gardening Tools"),("Pots", "Pots & Planters"),("Watering-Systems", "Watering Systems"), ("Kits", "Gardening Kits")]
 
 class ProductForm(Form):
     name = StringField('Product Name', [validators.Length(min=3, max=50, message="Product name must be 3-150 characters long"), validators.DataRequired
