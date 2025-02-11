@@ -37,16 +37,16 @@ class MultiCheckboxField(SelectMultipleField):
     widget = widgets.ListWidget(prefix_label=False)
     option_widget = widgets.CheckboxInput()
 
-categories = [("All", "All"),("Fertiliser", "Fertiliser"),("Seeds", "Seeds"),("Plants", "Plants"),
-              ("Tools", "Gardening Tools"),("Pots", "Pots & Planters"),("Decor", "Outdoor Decor")]
+categories = [("All", "All"),("Fertiliser", "Fertiliser"),("Seeds", "Seeds"),
+              ("Tools", "Gardening Tools"),("Pots", "Pots & Planters"),("Watering Systems", "Watering Systems"), ("Kits", "Gardening Kits")]
 
 class ProductForm(Form):
     name = StringField('Product Name', [validators.Length(min=3, max=50, message="Product name must be 3-150 characters long"), validators.DataRequired
                                         (message="Please enter a product name.")])
     images = FileField('Product Image', validators=[FileAllowed(['jpg', 'png', 'jpeg'],message="Only jpg, jpeg, png files are allowed.")])
-    description = StringField('Product Description', [validators.Length(min=1, max=1000), validators.DataRequired
+    description = StringField('Product Description', [validators.Length(min=1, max=100000), validators.DataRequired
                                                       (message="Please enter a product description.")])
-    qty = IntegerField('Quantity', [validators.NumberRange(min=0, max=100000), validators.DataRequired(message="Please enter a quantity.")])
+    qty = IntegerField('Quantity', [validators.NumberRange(min=0, max=1000000), validators.DataRequired(message="Please enter a quantity.")])
     selling_price = FloatField('Selling Price', [validators.NumberRange(min=1, max=10000, message="Please enter a valid number"), validators.DataRequired(message="Please enter a selling price.")])
     cost_price = FloatField('Cost Price', [validators.NumberRange(min=1, max=10000), validators.DataRequired(message="Please enter a cost price.")])
     visible = BooleanField('Visible', [validators.Optional()], default=True)

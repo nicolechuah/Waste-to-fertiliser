@@ -4,7 +4,7 @@ from AllForms import CollectFood,ReviewForm, InventoryForm
 from flask_bcrypt import Bcrypt
 from flask_login import login_user, current_user, logout_user, login_required, LoginManager
 
-import shelve, User
+import shelve, User, create_products
 from PIL import Image
 from datetime import datetime
 from werkzeug.utils import secure_filename
@@ -946,6 +946,10 @@ def edit_partner(id):
 
 def run():
     if __name__ == '__main__':
+        db = shelve.open('storage.db', 'c')
+        db['Images'] = {1: "images/default_product.png"}
+        db.close()
+        create_products.insert_to_db(create_products.product_list)
         app.run(debug=True)
 
 run()
