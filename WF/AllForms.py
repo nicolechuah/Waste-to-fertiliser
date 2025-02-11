@@ -3,7 +3,7 @@ from flask_wtf import FlaskForm
 from flask_wtf.file import FileField, FileAllowed
 from wtforms.validators import DataRequired, Length, Email, EqualTo, ValidationError,Regexp, Optional
 from wtforms import Form, StringField, IntegerField, FloatField, BooleanField, validators, SubmitField,RadioField, HiddenField
-from wtforms import PasswordField, BooleanField, TextAreaField, SelectField, EmailField
+from wtforms import PasswordField, BooleanField, TextAreaField, SelectField, EmailField, SelectMultipleField, widgets
 from flask_login import current_user
 import User
 class RegistrationForm(FlaskForm):
@@ -32,16 +32,26 @@ class AccountForm(FlaskForm):
 class DeleteAccountForm(FlaskForm):
     submit = SubmitField('Delete Account')
     
+    
+class MultiCheckboxField(SelectMultipleField):
+    widget = widgets.ListWidget(prefix_label=False)
+    option_widget = widgets.CheckboxInput()
+
+categories = [("All", "All"),("Fertiliser", "Fertiliser"),("Seeds", "Seeds"),
+              ("Tools", "Gardening Tools"),("Pots", "Pots & Planters"),("Watering Systems", "Watering Systems"), ("Kits", "Gardening Kits")]
+
 class ProductForm(Form):
     name = StringField('Product Name', [validators.Length(min=3, max=50, message="Product name must be 3-150 characters long"), validators.DataRequired
                                         (message="Please enter a product name.")])
     images = FileField('Product Image', validators=[FileAllowed(['jpg', 'png', 'jpeg'],message="Only jpg, jpeg, png files are allowed.")])
-    description = StringField('Product Description', [validators.Length(min=1, max=1000), validators.DataRequired
+    description = StringField('Product Description', [validators.Length(min=1, max=100000), validators.DataRequired
                                                       (message="Please enter a product description.")])
-    qty = IntegerField('Quantity', [validators.NumberRange(min=0, max=100000), validators.DataRequired(message="Please enter a quantity.")])
+    qty = IntegerField('Quantity', [validators.NumberRange(min=0, max=1000000), validators.DataRequired(message="Please enter a quantity.")])
     selling_price = FloatField('Selling Price', [validators.NumberRange(min=1, max=10000, message="Please enter a valid number"), validators.DataRequired(message="Please enter a selling price.")])
     cost_price = FloatField('Cost Price', [validators.NumberRange(min=1, max=10000), validators.DataRequired(message="Please enter a cost price.")])
     visible = BooleanField('Visible', [validators.Optional()], default=True)
+    category = MultiCheckboxField('Category', [validators.Optional()],choices=categories)
+    
 
 class InventoryForm(FlaskForm):
     qty = IntegerField('Quantity', [validators.NumberRange(min=0, max=100000), validators.DataRequired(message="Please enter a quantity.")])

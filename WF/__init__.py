@@ -4,7 +4,7 @@ from AllForms import CollectFood,ReviewForm, InventoryForm
 from flask_bcrypt import Bcrypt
 from flask_login import login_user, current_user, logout_user, login_required, LoginManager
 
-import shelve, User
+import shelve, User, create_products
 from PIL import Image
 from datetime import datetime
 from werkzeug.utils import secure_filename
@@ -44,6 +44,7 @@ def home():
     products_list = []
     for key in products_dict:
         product = products_dict.get(key)
+        product.display_image = product.display_first_img()
         products_list.append(product)
 
     if request.method == 'POST':
@@ -544,30 +545,45 @@ def create_product():
     create_product = ProductForm(request.form)
     # create object of ProductForm class
     relevant_image_IDs = []
+    uploaded_images = request.files.getlist('images')
     if request.method == 'POST' and create_product.validate():
-        for uploaded_image in request.files.getlist('images'):
-            if uploaded_image.filename == '': # if no image uploaded
-                saved_image = 'default_product.png'
-            else:
-                saved_image = Image.save_image(uploaded_image)
-            image_dict = {}
-            db = shelve.open('storage.db', 'c')
-            try:
-                image_id = db['ImageIDs']
-                image_dict = db['Images']
-                Image.Image_ID = image_id
-            except:
-                print("Error in retrieving Images from storage.db")
-                db['Images'] = {}
-                db['ImageIDs'] = 3
-            
-            new_image = Image(saved_image)  
-            relevant_image_IDs.append(new_image.get_image_id()) # list of product image IDs
-            image_dict[new_image.get_image_id()] = new_image #ID = path to image
-            db['Images'] = image_dict
-            db['ImageIDs'] = Image.Image_ID
-            db.close()
-
+        db = shelve.open('storage.db', 'c')
+        if len(uploaded_images) == 1 and uploaded_images[0].filename == "": # if no image uploaded
+                relevant_image_IDs.append(1)
+                try:
+                    image_dict = db['Images']
+                except:
+                    print("Error in retrieving Image from image.db")
+                    db['Images'] = {}
+                    image_dict = db['Images']
+                if image_dict.get(1) is None:
+                    image_dict[1] = "images/default_product.png"
+                    db['Images'] = image_dict
+        else:
+            for uploaded_image in request.files.getlist('images'):
+                # save the image
+                saved = Image.save_image(uploaded_image)
+                image_path = f"images/{saved}"
+                image_dict = {}
+                # assign it an ID
+                try:
+                    image_dict = db['Images']
+                    old_image_id = db['ImageIDs']
+                    new_image_id = old_image_id + 2
+                except:
+                    print("Error in retrieving Image from image.db")
+                    db['ImageIDs'] = 3
+                    new_image_id = db['ImageIDs'] + 2
+                # save the image using {ID: image}
+                image_dict[new_image_id] = image_path
+                db['Images'] = image_dict
+                db['ImageIDs'] = new_image_id
+                print(f"total images: {image_dict}")                                       
+                relevant_image_IDs.append(new_image_id)
+        db.close()
+        category = create_product.category.data
+        list_of_category = ['All'] + category
+                
         product_dict = {}
         db = shelve.open('storage.db', 'c')
         
@@ -580,15 +596,20 @@ def create_product():
             print("Error in retrieving Products from storage.db")
             db['Products'] = {}
         product = Product(create_product.name.data, create_product.description.data, create_product.qty.data, 
-                          create_product.selling_price.data, create_product.cost_price.data, create_product.visible.data, relevant_image_IDs)
+                          create_product.selling_price.data, create_product.cost_price.data, create_product.visible.data, relevant_image_IDs,list_of_category)
         product_dict[product.get_product_id()] = product
         db['Products'] = product_dict
         db['ProductIDs'] = Product.product_id
         db.close()
-        print(product)
+        print(f"product printing {product}")
         flash(f'Product {create_product.name.data} created!', 'success')
         return redirect(url_for('product_management'))
     return render_template('create-product.html', form=create_product, title = "Create Product")
+
+@app.route('/import-products', methods=['GET', 'POST'])
+def import_products():
+    pass
+
 
 @app.route("/manageUsers", methods=['GET'])
 def manage_users():
@@ -681,21 +702,22 @@ def product_management():
     products_dict = {}
     try:
         db = shelve.open('storage.db', 'r')
-
     except:
         print("Error in retrieving data from storage.db")
         db = shelve.open('storage.db', 'c')
         db['Products'] = {}
+
     products_dict = db['Products']
     db.close()
     
     products_list = []
     for key in products_dict:
-        product = products_dict.get(key)
+        product = products_dict.get(key)        
+        product.display_image = product.display_first_img()
         products_list.append(product)
-        
-            
+    
     return render_template('product-management.html', products_list=products_list, title = "Manage Products")
+
 
 @app.route('/inventory', methods = ['GET', 'POST'])
 def inventory():
@@ -747,28 +769,30 @@ def update_product(id):
         product.set_selling_price(update_product.selling_price.data)
         product.set_cost_price(update_product.cost_price.data)
         product.set_visible(update_product.visible.data)
-
+        product.set_category(update_product.category.data)
+        
         if request.method == 'POST' and update_product.validate():
             for uploaded_image in request.files.getlist('images'):
                 if uploaded_image.filename == '': # if no image uploaded
                     break
                 else:
                     saved_image = Image.save_image(uploaded_image)
-                    new_image = Image(saved_image)
+                    image_path = f"images/{saved_image}"
                     image_dict = {}
                     try:
                         image_dict = db['Images']
-                        image_id = db['ImageIDs']
-                        Image.image_id = image_id
+                        old_image_id = db['ImageIDs']
+                        new_image_id = old_image_id + 2
                     except:
-                        print("Error in retrieving Images from storage.db")
-                        db['Images'] = {}
-                    image_dict[new_image.get_image_id()] = new_image #ID = path to image
+                        print("Error in retrieving Image from image.db")
+                        db['ImageIDs'] = 3
+                        new_image_id = db['ImageIDs'] + 2
+                    image_dict[new_image_id] = image_path
                     db['Images'] = image_dict
-                    db['ImageIDs'] = Image.Image_ID
-                    product.add_image_id(new_image.get_image_id())
-                    product.remove_default_image()
-                    print(product)
+                    db['ImageIDs'] = new_image_id
+                    product.add_image_id(new_image_id)
+                    product.check_default_image()
+                    
         products_dict[id] = product
         db['Products'] = products_dict
         db.close()
@@ -778,7 +802,10 @@ def update_product(id):
           # idk why but theres type error if i dont fill it?
         products_dict = {}
         db = shelve.open('storage.db', 'r')
-        products_dict = db['Products']
+        try:
+            products_dict = db['Products']
+        except:
+            print("Error in retrieving Products from storage.db")
         db.close()
         
         # populate form with existing data
@@ -790,20 +817,49 @@ def update_product(id):
         update_product.selling_price.data = product.get_selling_price()
         update_product.cost_price.data = product.get_cost_price()
         update_product.visible.data = product.get_visible()
-        
+        update_product.category.data = product.get_category()
+        print(product)
         return render_template('update-product.html', form=update_product,
                                title = "Update Product", product = product)
+
+@app.route('/delete-image/<int:product_id>/<int:image_id>', methods=['POST', 'GET'])
+def delete_image(product_id, image_id):
+    db = shelve.open('storage.db', 'w')
+    try:
+        images_dict = db['Images']
+        products_dict = db['Products']
+    except:
+        print("Error in retrieving Images from storage.db")
+    product = products_dict.get(product_id)
+    list_of_image_id = product.get_images_id()
+    if image_id in images_dict and image_id != 1:
+        Image.delete_image(images_dict[image_id])
+        images_dict.pop(image_id)
+        product.remove_image_id(image_id)
+    elif image_id ==1 and len(list_of_image_id) == 1:
+        flash("Add another image before deleting the default image", 'danger')
+    product.check_default_image()
+    products_dict[product_id] = product
+    db['Products'] = products_dict
+
+        
+
+    return redirect(url_for('update_product', id=product_id)) # reroute to update product page
+
+
 @app.route('/delete-product/<int:id>', methods=['POST'])
 def delete_product(id):
     # stored variable id is passed from delete button @ product-management
     products_dict = {}
     db = shelve.open('storage.db', 'w')
     products_dict = db['Products']
-    image_dict = db['Images']
-    # Delete the image stored
     product = products_dict.get(id)
-    product.delete_all_images()
+    for image_id in product.get_all_images():
+        remove_filepath = image_id.split('/')[1]
+        Image.delete_image(remove_filepath)
     products_dict.pop(id)
+    
+    
     db['Products'] = products_dict
     db.close()
     flash(f'Product deleted!', 'success')
@@ -1193,10 +1249,13 @@ def approved_partners():
     return render_template('ApproveCollect.html', count=len(partners_list), partners_list=partners_list)
 
 
+def run():
+    if __name__ == '__main__':
+        db = shelve.open('storage.db', 'c')
+        db['Images'] = {1: "images/default_product.png"}
+        db.close()
+        create_products.insert_to_db(create_products.product_list)
+        app.run(debug=True)
 
-
-if __name__ == '__main__':
-    app.run(debug=True)
-
-
+run()
 
