@@ -49,6 +49,9 @@ class Product():
         
     def set_qty(self, qty):
         self.__qty = qty
+    
+    def ordered_qty(self, qty):
+        self.__qty -= qty
         
     def set_selling_price(self, selling_price):
         self.__selling_price = selling_price
