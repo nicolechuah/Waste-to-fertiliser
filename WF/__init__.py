@@ -385,6 +385,7 @@ def reset_password():
 def logout():
     session.pop('logged_in', None)
     session.pop('username', None)
+    session.pop('is_admin', None)
     flash('You have been logged out.', 'info')
     return redirect(url_for('home'))
 

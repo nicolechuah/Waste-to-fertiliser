@@ -1,3 +1,6 @@
+body {
+    overflow: hidden;
+}
 .navbar-custom {
     background-color: #587f37;
 }
@@ -87,7 +90,7 @@
 
 /* Sidebar Toggle Button */
 .sidebar-toggle {
-    position: absolute;
+    position: fixed;
     top: 50%;
     left: 200px; /* Positioned outside expanded sidebar */
     transform: translateY(-50%);
@@ -118,13 +121,19 @@
     left: 10px; /* Keep it visible outside */
 }
 
-/* Sidebar & Main Content Adjustments */
+/* Default Main Content Styling (When Sidebar is Present) */
 #main-content {
     margin-left: 200px;
     transition: margin-left 0.3s ease;
 }
 
-/* When sidebar is collapsed, shift content */
+/* When Sidebar is Collapsed */
 #sidebar.collapsed + #main-content {
-    margin-left: 50px;
+    margin-left: 5px;
 }
+
+/* When No Sidebar Exists (Non-Admin Users) */
+.no-sidebar #main-content {
+    margin-left: 0 !important;
+}
+
