@@ -15,7 +15,7 @@
         {% for image, image_id in product.get_images_with_id() %}
         
         <div>
-        <img src="{{ url_for('static', filename='images/' +  image)}}" alt="{{ product.get_name() }}" 
+        <img src="{{ url_for('static', filename= image)}}" alt="{{ product.get_name() }}" 
         style="width: 100px; height: 100px;">
         <br>
         <a href="{{ url_for('delete_image', product_id=product.get_product_id(), image_id=image_id) }}" class="btn btn-danger">X</a>

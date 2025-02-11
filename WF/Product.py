@@ -3,7 +3,7 @@ import shelve
 class Product():
     product_id = 0
     
-    def __init__(self, name, description, qty, selling_price, cost_price, visible, images):
+    def __init__(self, name, description, qty, selling_price, cost_price, visible, images,category):
         Product.product_id += 1
         self.__product_id = Product.product_id
         self.__name = name
@@ -12,11 +12,8 @@ class Product():
         self.__selling_price = selling_price
         self.__cost_price = cost_price
         self.__visible = visible
-        if images == []:
-            self.__images_id = [1] # default image ID
-        else:
-            self.__images_id = images # a list object of IDs
-        
+        self.__images_id = images
+        self.__category = category
     
 
     
@@ -41,6 +38,9 @@ class Product():
     def get_visible(self):
         return self.__visible
     
+    def get_category(self):
+        return self.__category
+    
     def set_name(self, name):
         self.__name = name
         
@@ -59,58 +59,53 @@ class Product():
     def set_visible(self, visible):
         self.__visible = visible
         
+    def set_category(self, category):
+        self.__category = category
+    
     def get_images_id(self):
-        return self.__images_id #returns a list of ID of the images
-    
-    def add_image_id(self, image_id):
-        self.__images_id.append(image_id) # make sure to only append the ID
-        
-    def remove_image_id(self, image_id):
-        self.__images_id.remove(image_id) # make sure to only remove the ID
-    
-    def get_images(self):
-        with shelve.open('storage.db') as db:
-            image_db = db['Images']
-            images = []
-            for image_id in self.__images_id:
-                if image_id in image_db:
-                    image = image_db[image_id]  # get the image object from the ID
-                    images.append(image.get_image())  # get the image name from the object
-                else:
-                    print(f"Image ID {image_id} not found in the database.")
-        return images
-    
-    def get_images_with_id(self):
-        with shelve.open('storage.db') as db:
-            image_db = db['Images']
-            images_with_id = []
-            for image_id in self.__images_id:
-                if image_id in image_db:
-                    image = image_db[image_id]
-                    images_with_id.append((image.get_image(), image_id))
-                else:
-                    print(f"Image ID {image_id} not found in the database.")
-        return images_with_id
-
-    def delete_all_images(self): #use only when deleting a product object
-        with shelve.open('storage.db') as db:
-            image_db = db['Images']
-            for image_id in self.__images_id:
-                if image_id in image_db and image_id != 1: # make sure to not delete the default image
-                    image = image_db[image_id]  # retrieve that image object
-                    image.delete_image(image.get_image())
-                    del image_db[image_id]
-            db['Images'] = image_db
+        return self.__images_id 
             
-    def add_default_image(self):
+    def get_all_images(self):
+        all_images = []
+        images_dict = {}
+        try:
+            db = shelve.open('storage.db')
+            images_dict = db['Images']
+        except:
+            print('Error in retrieving images from storage.db')
+        for image_id in self.__images_id:
+            image = images_dict.get(image_id)
+            all_images.append(image)
+        print(f"per product {all_images}")
+        return all_images
+    
+    def display_first_img(self):
+        all_images = self.get_all_images()
+        if len(all_images) > 0:
+            return all_images[0]
+        
+    def add_image_id(self, image_id):
+        self.__images_id.append(image_id)
+        
+    def get_images_with_id(self):
+        image_and_id = []
+        images = self.get_all_images()
+        image_id = self.__images_id
+        for i in range(len(images)):
+            image_and_id.append((images[i], image_id[i]))
+        return image_and_id
+    
+    def remove_image_id(self, image_id):
+        self.__images_id.remove(image_id)
+    
+    def check_default_image(self):
+        print(f"images id: {self.__images_id}")
         if len(self.__images_id) == 0:
             self.__images_id.append(1)
-    
-    def remove_default_image(self):
         if 1 in self.__images_id and len(self.__images_id) > 1:
             self.__images_id.remove(1)
-    
-    
+        print(f"images id: {self.__images_id}")
+            
     
     def get_average_rating(self):
         try:
@@ -132,8 +127,7 @@ class Product():
             storage['Reviews'] = {}
             return 0
             
-    def get_categories(self):
-        return self.__categories
+
     
 
     
@@ -141,4 +135,4 @@ class Product():
 
             
     def __str__(self):
-        return f"Product ID: {self.__product_id}, Name: {self.__name}, Image: {self.__images_id}, Qty:{self.__qty}"
+        return f"Product ID: {self.__product_id}, Name: {self.__name}, Image: {self.__images_id}, Category: {self.__category}, Description: {self.__description}, Quantity: {self.__qty}, Selling Price: {self.__selling_price}, Cost Price: {self.__cost_price}, Visible: {self.__visible}"

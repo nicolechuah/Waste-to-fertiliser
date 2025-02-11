@@ -3,7 +3,7 @@ from flask_wtf import FlaskForm
 from flask_wtf.file import FileField, FileAllowed
 from wtforms.validators import DataRequired, Length, Email, EqualTo, ValidationError,Regexp, Optional
 from wtforms import Form, StringField, IntegerField, FloatField, BooleanField, validators, SubmitField,RadioField, HiddenField
-from wtforms import PasswordField, BooleanField, TextAreaField, SelectField, EmailField
+from wtforms import PasswordField, BooleanField, TextAreaField, SelectField, EmailField, SelectMultipleField, widgets
 from flask_login import current_user
 
 class RegistrationForm(FlaskForm):
@@ -32,6 +32,10 @@ class AccountForm(FlaskForm):
 class DeleteAccountForm(FlaskForm):
     submit = SubmitField('Delete Account')
     
+    
+class MultiCheckboxField(SelectMultipleField):
+    widget = widgets.ListWidget(prefix_label=False)
+    option_widget = widgets.CheckboxInput()
 
 class ProductForm(Form):
     name = StringField('Product Name', [validators.Length(min=3, max=50, message="Product name must be 3-150 characters long"), validators.DataRequired
@@ -43,6 +47,7 @@ class ProductForm(Form):
     selling_price = FloatField('Selling Price', [validators.NumberRange(min=1, max=10000, message="Please enter a valid number"), validators.DataRequired(message="Please enter a selling price.")])
     cost_price = FloatField('Cost Price', [validators.NumberRange(min=1, max=10000), validators.DataRequired(message="Please enter a cost price.")])
     visible = BooleanField('Visible', [validators.Optional()], default=True)
+    category = MultiCheckboxField('Category', [validators.Optional()],choices=[('All', 'All'), ('Fruits', 'Fruits'), ('Vegetables', 'Vegetables'), ('Meat', 'Meat'), ('Dairy', 'Dairy'), ('Bakery', 'Bakery'), ('Beverages', 'Beverages'), ('Snacks', 'Snacks'), ('Others', 'Others')], default='All')
     
 
 class InventoryForm(FlaskForm):

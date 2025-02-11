@@ -1,25 +1,9 @@
 import os
 import secrets
 from flask import current_app as app
-import shelve
+
 
 class Image:
-    Image_ID = 3
-    def __init__(self, image): #image name is still the file name
-        if image == "default_product.png":
-            self.__image_id = 1
-            self.__image = image
-        else:
-            Image.Image_ID += 1
-            self.__image_id = Image.Image_ID
-            self.__image = image #make sure to run save_image function first before creating an object
-        
-    def get_image_id(self):
-        return self.__image_id
-    
-    def get_image(self):
-        return self.__image
-    
     @staticmethod
     def save_image(image):
         random_hex = secrets.token_hex(8) #randomize filename
@@ -31,9 +15,10 @@ class Image:
     
     @staticmethod
     def delete_image(image):
+        print(image)
         image_path = os.path.join(app.config['UPLOAD_FOLDER'], image)
         if os.path.exists(image_path) and image != "default_product.png":
             os.remove(image_path)
     
     def __str__(self):
-        return f"Image ID: {self.__image_id}\nImage: {self.__image}"
+        return f"Current Image ID {Image.Image_ID}"

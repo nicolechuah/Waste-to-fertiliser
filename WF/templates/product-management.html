@@ -23,24 +23,19 @@
     	</tr>
     </thead>
     <tbody>
-    	{% for product in products_list %}
-    	<tr>
-			
+		{% for product in products_list %}
+		<tr>
 			<td>
-				{% if product.get_images() %}
-				<img src="{{ url_for('static', filename='images/' +  product.get_images()[0]) }}" 
-				alt="{{ product.get_name() }}" style="width: 100px; height: 100px;">
-				{% else %}
-				<img src="{{ url_for('static', filename='images/default_product.png') }}"
-				 alt="{{ product.get_name() }}" style="width: 100px; height: 100px;">
-				{% endif %}
-
+				<!-- No need for conditional checks; use the validated display_image -->
+				<img src="{{ url_for('static', filename= product.display_image) }}" 
+					 alt="{{ product.get_name() }}" 
+					 style="width: 100px; height: 100px;">
 			</td>
-        	<td>{{product.get_product_id()}}</td>
-        	<td>{{product.get_name()}}</td>
-        	<td>{{product.get_description()}}</td>
-        	<td>{{product.get_selling_price()}}</td>
-        	<td>{{product.get_cost_price()}}</td>
+			<td>{{ product.get_product_id() }}</td>
+			<td>{{ product.get_name() }}</td>
+			<td>{{ product.get_description() }}</td>
+			<td>{{ product.get_selling_price() }}</td>
+			<td>{{ product.get_cost_price() }}</td>
 			<td>
 				{% if product.get_visible() %}
 					Visible
@@ -48,55 +43,50 @@
 					Hidden
 				{% endif %}
 			</td>
-        	<td>
+			<td>
 				<div class="btn-group gap-2">
-					<a href="/update-product/{{product.get_product_id()}}" 
+					<a href="/update-product/{{ product.get_product_id() }}" 
 					   class="btn btn-warning">Update</a>
-					<form action= "" method="POST" class="d-inline">
-						<!--When clicked go to delete_product and pass product id as variable -->
+					<form action="" method="POST" class="d-inline">
 						<button type="button" 
 								class="btn btn-danger" 
-								data-bs-toggle="modal"
-								data-bs-target="#myModal_{{product.get_product_id()}}">
+								data-bs-toggle="modal" 
+								data-bs-target="#myModal_{{ product.get_product_id() }}">
 							Delete
 						</button>
 					</form>
 				</div>
-
-        	    <!--THE MODAL-->
-        	    <div class="modal" id="myModal_{{product.get_product_id()}}">
-        	      <div class="modal-dialog">
-        	        <div class="modal-content">
-					
-        	          <!-- Modal Header -->
-        	          <div class="modal-header">
-        	            <h4 class="modal-title">Delete Confirmation</h4>
-        	            <button type="button" class="btn-close" data-bs-dismiss="modal">
-						</button>
-        	          </div>
-
-        	          <!-- Modal body -->
-        	          <div class="modal-body">
-        	            Are you sure you want to delete Product ID {{product.get_product_id()}}: {{product.get_name()}}?
-        	          </div>
-        	          <!-- Modal footer -->
-        	          <div class="modal-footer">
-						<form action="{{url_for('delete_product', id = product.get_product_id())}}" 
-						method="POST">
-        	            <input type="submit" value="Delete" class="btn btn-danger"/>
-						</form>
-        	            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
-        	            	Cancel
-        	            </button>
-        	          </div>
-        	        </div>
-        	      </div>
-        	    </div>
-        		</form>
-        	</td>
-    	</tr>
+	
+				<!-- THE MODAL -->
+				<div class="modal" id="myModal_{{ product.get_product_id() }}">
+					<div class="modal-dialog">
+						<div class="modal-content">
+							<!-- Modal Header -->
+							<div class="modal-header">
+								<h4 class="modal-title">Delete Confirmation</h4>
+								<button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+							</div>
+	
+							<!-- Modal Body -->
+							<div class="modal-body">
+								Are you sure you want to delete Product ID {{ product.get_product_id() }}: {{ product.get_name() }}?
+							</div>
+	
+							<!-- Modal Footer -->
+							<div class="modal-footer">
+								<form action="{{ url_for('delete_product', id=product.get_product_id()) }}" method="POST">
+									<input type="submit" value="Delete" class="btn btn-danger"/>
+								</form>
+								<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+							</div>
+						</div>
+					</div>
+				</div>
+			</td>
+		</tr>
 		{% endfor %}
-    </tbody>
+	</tbody>
+	
   </table>
 </div>
 {% endblock %}
