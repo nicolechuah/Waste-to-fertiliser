@@ -3,7 +3,6 @@ import shelve
 
 product_list = [Product("Organic Fertiliser - 100g", "This organic fertiliser: contains no chemical, contains no harmful pathogens, improves soil organic matter, serves as a strong foundation to bare soil, is suitable for all plants, creates savings for users,has a high NPK value and no offensive odour.",500,3.00, 0.50, True,[1],["All", "Fertiliser"]), 
  Product("Sunflower seeds", "These sunflower seeds are easy to grow and suitable for beginners. It contains 20 seeds in a packet, with 50-60 days to maturity.",30,3.60, 1.00, True,[1],["All", "Seeds"]), 
- Product("Compost Bin", "This compost bin is made of durable plastic and is suitable for composting kitchen waste. It has a capacity of 50 litres and is easy to assemble.",50,20.00, 5.00, True,[1],["All", "Tools"]), 
  Product("Vegetable Seeds", "These vegetable seeds are easy to grow and suitable for beginners. It contains 20 seeds in a packet, with 30-40 days to maturity.",30,3.60, 1.00, True,[1],["All", "Seeds"]), 
  Product("Garden Gloves", "These garden gloves are made of durable rubber and are suitable for gardening. They have a grip on the palm and are easy to clean.",50,10.00, 2.00, True,[1],["All", "Tools"]), 
  Product("Fruit Tree Seeds", "These fruit tree seeds are easy to grow and suitable for beginners. It contains 10 seeds in a packet, with 60-90 days to maturity.",30,4.80, 1.50, True,[1],["All", "Seeds"]), 
