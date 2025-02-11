@@ -1,0 +1,20 @@
+{% if session.get('is_admin') %}
+<h2>Sales</h2>
+<ul class="nav nav-pills flex-column">
+    <li class="nav-item">
+        <a href="#" class="nav-link text-white">Orders</a>
+    </li>
+    <li class="nav-item">
+        <a href="#" class="nav-link text-white">Manage Products</a>
+    </li>
+    <li class="nav-item">
+        <a href="{{ url_for('manage_users') }}" class="nav-link text-white">Manage Users</a>
+    </li>
+    <li class="nav-item">
+        <a href="#" class="nav-link text-white">Customer Support</a>
+    </li>
+    <li class="nav-item">
+        <a href="#" class="nav-link text-white">Food Collection</a>
+    </li>
+</ul>
+{% endif %}
