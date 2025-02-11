@@ -76,7 +76,6 @@ class Product():
         for image_id in self.__images_id:
             image = images_dict.get(image_id)
             all_images.append(image)
-        print(f"per product {all_images}")
         return all_images
     
     def display_first_img(self):

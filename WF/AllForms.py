@@ -37,6 +37,9 @@ class MultiCheckboxField(SelectMultipleField):
     widget = widgets.ListWidget(prefix_label=False)
     option_widget = widgets.CheckboxInput()
 
+categories = [("All", "All"),("Fertiliser", "Fertiliser"),("Seeds", "Seeds"),("Plants", "Plants"),
+              ("Tools", "Gardening Tools"),("Pots", "Pots & Planters"),("Decor", "Outdoor Decor")]
+
 class ProductForm(Form):
     name = StringField('Product Name', [validators.Length(min=3, max=50, message="Product name must be 3-150 characters long"), validators.DataRequired
                                         (message="Please enter a product name.")])
@@ -47,7 +50,7 @@ class ProductForm(Form):
     selling_price = FloatField('Selling Price', [validators.NumberRange(min=1, max=10000, message="Please enter a valid number"), validators.DataRequired(message="Please enter a selling price.")])
     cost_price = FloatField('Cost Price', [validators.NumberRange(min=1, max=10000), validators.DataRequired(message="Please enter a cost price.")])
     visible = BooleanField('Visible', [validators.Optional()], default=True)
-    category = MultiCheckboxField('Category', [validators.Optional()],choices=[('All', 'All'), ('Fruits', 'Fruits'), ('Vegetables', 'Vegetables'), ('Meat', 'Meat'), ('Dairy', 'Dairy'), ('Bakery', 'Bakery'), ('Beverages', 'Beverages'), ('Snacks', 'Snacks'), ('Others', 'Others')], default='All')
+    category = MultiCheckboxField('Category', [validators.Optional()],choices=categories)
     
 
 class InventoryForm(FlaskForm):

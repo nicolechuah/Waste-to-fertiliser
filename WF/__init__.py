@@ -446,6 +446,9 @@ def create_product():
                 print(f"total images: {image_dict}")                                       
                 relevant_image_IDs.append(new_image_id)
         db.close()
+        category = create_product.category.data
+        list_of_category = ['All'] + category
+                
         product_dict = {}
         db = shelve.open('storage.db', 'c')
         
@@ -458,7 +461,7 @@ def create_product():
             print("Error in retrieving Products from storage.db")
             db['Products'] = {}
         product = Product(create_product.name.data, create_product.description.data, create_product.qty.data, 
-                          create_product.selling_price.data, create_product.cost_price.data, create_product.visible.data, relevant_image_IDs,create_product.category.data)
+                          create_product.selling_price.data, create_product.cost_price.data, create_product.visible.data, relevant_image_IDs,list_of_category)
         product_dict[product.get_product_id()] = product
         db['Products'] = product_dict
         db['ProductIDs'] = Product.product_id
@@ -547,7 +550,8 @@ def update_product(id):
         product.set_selling_price(update_product.selling_price.data)
         product.set_cost_price(update_product.cost_price.data)
         product.set_visible(update_product.visible.data)
-
+        product.set_category(update_product.category.data)
+        
         if request.method == 'POST' and update_product.validate():
             for uploaded_image in request.files.getlist('images'):
                 if uploaded_image.filename == '': # if no image uploaded
@@ -594,7 +598,8 @@ def update_product(id):
         update_product.selling_price.data = product.get_selling_price()
         update_product.cost_price.data = product.get_cost_price()
         update_product.visible.data = product.get_visible()
-        
+        update_product.category.data = product.get_category()
+        print(product)
         return render_template('update-product.html', form=update_product,
                                title = "Update Product", product = product)
 
