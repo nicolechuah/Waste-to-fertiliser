@@ -1,5 +1,5 @@
 {% extends "base.html" %} {% block content %}
-<div class="d-flex justify-content-between">
+<div class="d-flex justify-content-between pb-5">
   <h1>Product Management</h1>
   <div>
     <a href="{{url_for('create_product')}}" class="px-1 btn btn-light ">Create Product</a>
@@ -8,15 +8,18 @@
   </div>
 </div>
 <div>
+	
+</div>
+<div>
   <table class="table table-striped">
     <thead>
     	<tr>
 			<th></th>
-        	<th><h4>ID</h4></th>
-        	<th><h4>Name</h4></th>
-        	<th><h4>Description</h4></th>
-        	<th><h4>Selling Price</h4></th>
-        	<th><h4>Cost Price</h4></th>
+        	<th>ID</th>
+        	<th>Name</th>
+        	<th>Description</th>
+        	<th>Selling Price</th>
+        	<th>Cost Price</th>
 			<th>
 				<h4>Visible</h4>
 			</th>

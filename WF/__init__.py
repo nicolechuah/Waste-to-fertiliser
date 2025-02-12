@@ -667,12 +667,12 @@ def import_products():
             cost_price = row['Cost Price']
             visible = row['Visible']
             images = [1]
-            category_string = row['Category']  # Assuming this is "['All', 'Pots']"
+            category_string = row['Category']  # Output: "['All', 'Pots']"
             trimming = category_string[1:-1]
             category = []
 
             for cat in trimming.split(","):
-            # First remove spaces, then remove the single quotes
+            # remove spaces, then remove the single quotes
                 cleaned_cat = cat.strip().strip("'")
                 category.append(cleaned_cat)
 
