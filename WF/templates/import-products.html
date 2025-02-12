@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block content %}
+
+<!-- Dropzone Form -->
+<form action="{{ url_for('import_products') }}" 
+      class="dropzone" 
+      id="product-import-dropzone"
+      enctype="multipart/form-data">
+    <div class="dz-message">
+        Drop Excel files here or click to upload<br>
+    </div>
+</form>
+
+
+<a href="{{ url_for('product_management') }}" class="btn btn-secondary mt-3">
+    Back to Product Management
+</a>
+
+<script>
+Dropzone.options.productImportDropzone = {
+    paramName: "file",
+    acceptedFiles: ".xlsx",
+    maxFilesize: 5, // MB
+    maxFiles: 1,
+    init: function() {
+        this.on("success", function(file, response) {
+            if (response.success) {
+                alert(response.message); // Or display in a nicer way
+                setTimeout(() => {
+                    window.location.href = "{{ url_for('product_management') }}";
+                },0); // Redirect to product management page
+            } else {
+                alert(response.message); // Or display in a nicer way
+            }
+            this.removeAllFiles();
+        });
+        
+        this.on("error", function(file, errorMessage) {
+            alert(errorMessage); // Or display in a nicer way
+            this.removeAllFiles();
+        });
+    }
+};
+</script>
+
+{% endblock content %}
