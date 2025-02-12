@@ -1,4 +1,4 @@
-from flask import Flask, render_template, url_for, flash, redirect, request, session
+from flask import Flask, render_template, url_for, flash, redirect, request, session,send_file,jsonify
 from AllForms import RegistrationForm, LoginForm, AccountForm, ResetPasswordForm, ProductForm, UserFWF, CheckoutForm, PaymentForm
 from AllForms import CollectFood,ReviewForm, InventoryForm
 from flask_bcrypt import Bcrypt
@@ -6,6 +6,7 @@ from flask_login import login_user, current_user, logout_user, login_required, L
 
 import shelve, User, initial_settings
 from PIL import Image
+import pandas as pd
 from datetime import datetime
 from werkzeug.utils import secure_filename
 import os
@@ -22,6 +23,9 @@ app = Flask(__name__)
 app.config['SECRET_KEY'] = 'd6691973382147ed2b8724aa19eb0720'
 app.config['UPLOAD_FOLDER'] = os.path.join(app.root_path, 'static', 'images')
 app.config['MAX_CONTENT_LENGTH'] = 10 *1024 * 1024
+TEMP_FOLDER = os.path.join(app.root_path, 'temp') # temp folder for file uploads
+if not os.path.exists(TEMP_FOLDER):
+    os.makedirs(TEMP_FOLDER)
 ALLOW_INIT_ADMIN = True  # Set to True to allow the creation of an initial admin account
 
 
@@ -642,8 +646,94 @@ def create_product():
 
 @app.route('/import-products', methods=['GET', 'POST'])
 def import_products():
-    pass
+    if request.method == "GET":
+        return render_template('import-products.html', title="Import Products")
+    file = request.files['file']
+    filename = secure_filename(file.filename)
+    temp_file_path = os.path.join(app.root_path, 'temp', filename)
+    file.save(temp_file_path)
+    try:
+        df = pd.read_excel(temp_file_path, engine = 'openpyxl')
+        
+        #counter
+        stats = 0
+        db = shelve.open('storage.db', 'c')
+        products_dict = db.get('Products', {})
+        for x, row in df.iterrows():
+            name = row['Name']
+            description = row['Description']
+            qty = row['Quantity']
+            selling_price = row['Selling Price']
+            cost_price = row['Cost Price']
+            visible = row['Visible']
+            images = [1]
+            category_string = row['Category']  # Assuming this is "['All', 'Pots']"
+            trimming = category_string[1:-1]
+            category = []
 
+            for cat in trimming.split(","):
+            # First remove spaces, then remove the single quotes
+                cleaned_cat = cat.strip().strip("'")
+                category.append(cleaned_cat)
+
+            print(category)  # Output: ['All', 'Pots']
+            print(type(category))  # Output: <class 'list'>
+            
+            new_product = Product(name, description, qty, selling_price, cost_price, visible, images, category)
+            products_dict[new_product.get_product_id()] = new_product
+            stats += 1
+        db['Products'] = products_dict
+        db.close()
+        if os.path.exists(temp_file_path):
+            os.remove(temp_file_path)
+        if request.accept_mimetypes.accept_json: 
+            return jsonify({  # only becaue dropzone uses ajax, jsonify helps to return json response
+                              # passes this to javascript on import-products.html
+                'success': True,
+                'message': f"Successfully imported {stats} products!",
+                'stats': stats
+            })
+        else:
+            flash(f"Successfully imported {stats} products!", 'success')
+            return redirect(url_for('product_management'))
+    except:
+        if request.accept_mimetypes.accept_json:
+            return jsonify({
+                'success': False,
+                'message': "Error importing products. Please check the file format."
+            })
+        else:
+            flash("Error importing products. Please check the file format.", 'danger')
+    return redirect(url_for('product_management'))
+            
+
+@app.route('/export-products', methods=['GET'])
+def export_products():
+    db = shelve.open('storage.db', 'r')
+    try:
+        products_dict = db['Products']
+    except:
+        print("Error in retrieving Products from storage.db")
+        db.close()
+        return redirect(url_for('product_management'))
+    product_objects = []
+    for key, obj in products_dict.items():
+        product_objects.append(obj)
+    object_info = []
+    for object in product_objects:
+            object_info.append({"Product ID": object.get_product_id(), 
+                           "Name": object.get_name(), 
+                           "Description": object.get_description(), 
+                           "Quantity": object.get_qty(), 
+                           "Selling Price": object.get_selling_price(), 
+                           "Cost Price": object.get_cost_price(), 
+                           "Visible": object.get_visible(), 
+                           "Category": object.get_category()})
+    df = pd.DataFrame(object_info)
+    output_file = os.path.join('temp/', 'products.xlsx')
+    df.to_excel(output_file,index=False)
+    db.close()
+    return send_file(output_file, as_attachment=True)
 
 @app.route("/manageUsers", methods=['GET'])
 def manage_users():
