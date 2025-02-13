@@ -469,14 +469,6 @@ def account():
             current_user.set_password(form.password.data)
             updated = True
 
-        # Update profile picture
-        '''
-        if form.picture.data:
-            picture_file = save_picture(form.picture.data)
-            current_user.set_profile_picture(picture_file)
-            updated = True
-        '''
-
         # Save changes to the database
         if updated:
             users_dict[current_user_id] = current_user 
