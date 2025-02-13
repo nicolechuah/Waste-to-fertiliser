@@ -730,7 +730,7 @@ def export_products():
                            "Visible": object.get_visible(), 
                            "Category": object.get_category()})
     df = pd.DataFrame(object_info)
-    output_file = os.path.join('temp/', 'products.xlsx')
+    output_file = os.path.join(TEMP_FOLDER, 'products.xlsx')
     df.to_excel(output_file,index=False)
     db.close()
     return send_file(output_file, as_attachment=True)
