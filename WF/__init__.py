@@ -30,8 +30,9 @@ ALLOW_INIT_ADMIN = True  # Set to True to allow the creation of an initial admin
 
 
 
-@app.route('/', methods=['GET', 'POST'])
-def home():
+@app.route('/', defaults={'category': None}, methods=['GET', 'POST'])
+@app.route('/category/<category>', methods=['GET', 'POST'])
+def home(category):
     try:
         db = shelve.open('storage.db', 'r')
         products_dict = db['Products']
@@ -46,74 +47,77 @@ def home():
         db['Categories'] = {}
         cat_dict = db['Categories']
     db.close()
+
+    # Create category list
     cat_list = []
     for val, label in cat_dict.items():
         cat_list.append((val, label))
 
-    products_list = []
-    for key in products_dict:
-        product = products_dict.get(key)
-        product.display_image = product.display_first_img()
-        products_list.append(product)
 
+    products_list = []
+    if category is None or category == "All":
+        for key in products_dict:
+            product = products_dict.get(key)
+            product.display_image = product.display_first_img()
+            products_list.append(product)
+    else:
+        for key in products_dict:
+            product = products_dict.get(key)
+            list_of_cat = product.get_category()
+            for cat in list_of_cat:
+                if cat == category:
+                    product.display_image = product.display_first_img()
+                    products_list.append(product)
+                    break
+    search = request.args.get('q', '').lower().strip()
+    search_list = []
+    if search:
+        for product in products_list:
+            if search in product.get_name().lower():
+                search_list.append(product)
+    products_list = search_list if search else products_list
+    # partial response handling 
+    if request.headers.get('HX-Request'):
+        return render_template('includes/home_partial.html', products_list=products_list, cat_list=cat_list, title="Home")
+    # uses a partial page meaing that it only updates the part of the page that is needed by id (hx-target)
+
+    # Process POST request for adding product to cart
     if request.method == 'POST':
         product_name = request.form.get('product_name')
         unit_price = float(request.form.get('unit_price', 0))
-
         if product_name:
             try:
                 quantity = 1
                 with shelve.open('storage.db', writeback=True) as db:
                     if 'cart' not in db:
                         db['cart'] = {'items': []}
-
                     cart_items = db['cart']['items']
-
+                    found = False
                     for item in cart_items:
                         if item['name'] == product_name:
                             item['quantity'] += quantity
                             item['total_price'] = item['unit_price'] * item['quantity']
+                            found = True
                             break
-                    else:
+                    if not found:
                         cart_items.append({
                             'name': product_name,
                             'unit_price': unit_price,
                             'quantity': quantity,
                             'total_price': unit_price * quantity
                         })
-
                     db['cart']['items'] = cart_items
                 flash(f"{product_name} successfully added to cart!", 'success')
             except Exception as e:
                 flash(f"Error adding product to cart: {e}", 'danger')
 
-    return render_template('home.html', products_list=products_list, cat_list = cat_list, title="Home") 
+    # Set the page title depending on whether a category is selected
+    if category is None or category == "All":
+        title = "Home"
+    else:
+        title = category
 
-@app.route('/category/<category>', methods=['GET'])
-def category(category):
-    try:
-        db = shelve.open('storage.db', 'r')
-        products_dict = db.get('Products', {})
-        cat_dict = db['Categories']
-    except:
-        print("Error retrieving data from storage.db")
-        products_dict = {}
-    finally:
-        db.close()
-    products_list =[]
-    for key, value in products_dict.items():
-        print(value)
-        list_of_cat = value.get_category()
-        print(f"list of cat: {list_of_cat}")
-        for cat in list_of_cat:
-            if cat == category:
-                products_list.append(value)
-    cat_list = []
-    for val, label in cat_dict.items():
-        cat_list.append((val, label))
-
-    # Render a category page with the filtered products
-    return render_template('category.html', products_list=products_list, cat_list = cat_list, title=f"{category.capitalize()}")
+    return render_template('home.html', products_list=products_list, cat_list=cat_list, title=title)
 
     
                         

@@ -57,18 +57,30 @@
                     <button type="button" class="btn btn-light">{{ label }}</button>
                 </a>
             {% else %}
-                <a href="{{ url_for('category', category=val) }}#products">
+                <a href="{{ url_for('home', category=val) }}#products">
                     <button type="button" class="btn btn-light">{{ label }}</button>
                 </a>
+                
             {% endif %}
         {% endfor %}
     </div>
-    
-    
-  </div>
-  
+    <div class="container mb-4">
+        <input type="search" 
+               name="q" 
+               placeholder="Search products..."
+               hx-get="{{ url_for('home', category=category) if category else url_for('home') }}"
+               hx-trigger="keyup changed delay:500ms"
+               hx-target="#products_list"
+               hx-params="*"
+               hx-push-url="true"
+               class="form-control">
+    </div>
+        
+</div>
 
-<div class="d-flex flex-wrap justify-content-start custom-container" id="products">
+  
+<!-- this whole div has to be changed in home_partial.html as well -->
+<div class="d-flex flex-wrap justify-content-start custom-container" id="products_list">
     {% if products_list|length == 0 %}
         <h1>No products found</h1>
     {% endif %}
