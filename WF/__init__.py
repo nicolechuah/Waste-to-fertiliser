@@ -119,7 +119,80 @@ def home(category):
 
     return render_template('home.html', products_list=products_list, cat_list=cat_list, title=title)
 
-    
+@app.route('/filter/<sort_key>', methods=['GET', 'POST'], endpoint='filter')
+def filter_products(sort_key):
+    # Open the shelve database and get products and categories
+    try:
+        db = shelve.open('storage.db', 'r')
+        products_dict = db.get('Products', {})
+        cat_dict = db.get('Categories', {})
+    except Exception as e:
+        print("Error retrieving data from storage.db:", e)
+        db = shelve.open('storage.db', 'c')
+        db['Products'] = {}
+        products_dict = db['Products']
+        db['Images'] = {}
+        db['Categories'] = {}
+        cat_dict = db['Categories']
+    db.close()
+    cat_list = []
+    for val, label in cat_dict.items():
+        cat_list.append((val, label))
+
+ 
+    products_list = []
+    for prod_key in products_dict:
+        product = products_dict.get(prod_key)
+        product.display_image = product.display_first_img()
+        products_list.append(product)
+
+    if sort_key == 'ratings':
+        def get_rating(product):
+            try:
+                return float(product.get_average_rating())
+            except:
+                return 0.0
+        products_list.sort(key=get_rating)
+        title = "Products by Rating"
+    elif sort_key == 'hightolow':
+        products_list.sort(key=lambda product: product.get_selling_price(), reverse=True)
+        title = "Products: Price High to Low"
+    elif sort_key == 'lowtohigh':
+        products_list.sort(key=lambda product: product.get_selling_price())
+        title = "Products: Price Low to High"
+    else:
+        title = "Products"
+        products_list.sort(key=lambda product: product.get_name())
+# Process POST request for adding product to cart
+    if request.method == 'POST':
+        product_name = request.form.get('product_name')
+        unit_price = float(request.form.get('unit_price', 0))
+        if product_name:
+            try:
+                quantity = 1
+                with shelve.open('storage.db', writeback=True) as db:
+                    if 'cart' not in db:
+                        db['cart'] = {'items': []}
+                    cart_items = db['cart']['items']
+                    found = False
+                    for item in cart_items:
+                        if item['name'] == product_name:
+                            item['quantity'] += quantity
+                            item['total_price'] = item['unit_price'] * item['quantity']
+                            found = True
+                            break
+                    if not found:
+                        cart_items.append({
+                            'name': product_name,
+                            'unit_price': unit_price,
+                            'quantity': quantity,
+                            'total_price': unit_price * quantity
+                        })
+                    db['cart']['items'] = cart_items
+                flash(f"{product_name} successfully added to cart!", 'success')
+            except Exception as e:
+                flash(f"Error adding product to cart: {e}", 'danger')
+    return render_template('home.html', products_list=products_list, cat_list=cat_list, title=title)
                         
 @app.route('/products', methods=['GET', 'POST'])
 def products():
