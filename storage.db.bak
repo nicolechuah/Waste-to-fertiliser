@@ -1,4 +1,4 @@
-'Products', (0, 272)
+'Products', (7168, 11099)
 'ProductIDs', (512, 5)
 'Reviews', (1024, 188)
 'cart', (1536, 110)
@@ -12,3 +12,5 @@
 'Collectusers', (5632, 265)
 'CollectusersIDs', (6144, 5)
 'ReviewIDs', (6656, 5)
+'Categories', (18432, 183)
+'Images', (18944, 46)
