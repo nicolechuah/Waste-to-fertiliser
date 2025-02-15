@@ -74,12 +74,13 @@
                hx-params="*"
                hx-push-url="true"
                class="form-control">
-    <!-- Button to open modal -->
-    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#imageUploadModal">Search by Image</button>
-
-    <!-- Image Upload Modal -->
-    <div class="modal fade" id="imageUploadModal" tabindex="-1" aria-labelledby="imageUploadModalLabel" aria-hidden="true">
-        <div class="modal-dialog">
+    
+        <!-- Button to open modal -->
+        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#imageUploadModal" style="background-color: #587f37;">Search by Image</button>
+    
+        <!-- Image Upload Modal -->
+        <div class="modal fade" id="imageUploadModal" tabindex="-1" aria-labelledby="imageUploadModalLabel" aria-hidden="true">
+            <div class="modal-dialog">
                 <div class="modal-content">
                     <div class="modal-header">
                         <h5 class="modal-title" id="imageUploadModalLabel">Upload Image to Search</h5>
@@ -94,12 +95,13 @@
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                        <button class="btn btn-primary" onclick="uploadImage()">Search</button>
+                        <button id="imageSearchButton" class="btn btn-primary">Search</button>
                     </div>
                 </div>
             </div>
         </div>
     </div>
+    
         
 </div>
 <div class="container mb-4">
@@ -161,29 +163,25 @@
     document.getElementById("drop-zone").addEventListener("click", function() {
         document.getElementById("imageUpload").click();
     });
-    
+
     document.getElementById("imageUpload").addEventListener("change", function(event) {
         let file = event.target.files[0];
         if (file) {
             document.getElementById("file-name").innerText = "Selected: " + file.name;
         }
     });
-    
+
     document.getElementById("drop-zone").addEventListener("dragover", function(event) {
         event.preventDefault();
-        event.stopPropagation();
         this.classList.add("bg-light");
     });
-    
+
     document.getElementById("drop-zone").addEventListener("dragleave", function(event) {
-        event.preventDefault();
-        event.stopPropagation();
         this.classList.remove("bg-light");
     });
-    
+
     document.getElementById("drop-zone").addEventListener("drop", function(event) {
         event.preventDefault();
-        event.stopPropagation();
         this.classList.remove("bg-light");
         let file = event.dataTransfer.files[0];
         if (file) {
@@ -191,32 +189,32 @@
             document.getElementById("file-name").innerText = "Selected: " + file.name;
         }
     });
-    
-    function uploadImage() {
+
+    document.getElementById("imageSearchButton").addEventListener("click", function() {
         let fileInput = document.getElementById('imageUpload');
-        if (fileInput.files.length === 0) {
-            alert('Please select an image first!');
-            return;
-        }
-        
         let formData = new FormData();
-        formData.append('image', fileInput.files[0]);
         
+        if (fileInput.files.length > 0) {
+            formData.append('image', fileInput.files[0]);
+        }
+
         fetch('/search-by-image', {
             method: 'POST',
-            body: formData
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                window.location.href = `/view-product/${data.product_id}`;
-            } else {
-                alert('No matching product found!');
+            body: formData,
+            headers: {
+                'HX-Request': 'true'
             }
         })
+        .then(response => response.text())  
+        .then(html => {
+            document.getElementById("products_list").innerHTML = html;
+            document.getElementById("imageUploadModal").classList.remove("show");
+            document.querySelector(".modal-backdrop").remove();
+        })
         .catch(error => console.error('Error:', error));
-    }
-    </script>
+    });
+</script>
+
 
     
 {% endblock %}
