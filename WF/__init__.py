@@ -4,7 +4,7 @@ from AllForms import CollectFood,ReviewForm, InventoryForm
 from flask_bcrypt import Bcrypt
 from flask_login import login_user, current_user, logout_user, login_required, LoginManager
 from datetime import datetime, timedelta
-import shelve, User, initial_settings
+import shelve, User, initial_settings, subprocess
 from PIL import Image
 import pandas as pd
 from datetime import datetime
@@ -17,6 +17,7 @@ import shelve
 from Fwfuser import FWFUser
 from Collect import Collect
 from Image import Image
+from image_search import search_by_image 
 
 
 app = Flask(__name__)
@@ -655,64 +656,99 @@ def create_product():
     relevant_image_IDs = []
     uploaded_images = request.files.getlist('images')
     if request.method == 'POST' and create_product.validate():
-        db = shelve.open('storage.db', 'c')
-        if len(uploaded_images) == 1 and uploaded_images[0].filename == "": # if no image uploaded
-                relevant_image_IDs.append(1)
-                try:
-                    image_dict = db['Images']
-                except:
-                    print("Error in retrieving Image from image.db")
-                    db['Images'] = {}
-                    image_dict = db['Images']
-                if image_dict.get(1) is None:
-                    image_dict[1] = "images/default_product.png"
+        action = request.form.get('action')
+        if action == 'Submit':
+            db = shelve.open('storage.db', 'c')
+            if len(uploaded_images) == 1 and uploaded_images[0].filename == "": # if no image uploaded
+                    relevant_image_IDs.append(1)
+                    try:
+                        image_dict = db['Images']
+                    except:
+                        print("Error in retrieving Image from image.db")
+                        db['Images'] = {}
+                        image_dict = db['Images']
+                    if image_dict.get(1) is None:
+                        image_dict[1] = "images/default_product.png"
+                        db['Images'] = image_dict
+            else:
+                for uploaded_image in request.files.getlist('images'):
+                    # save the image
+                    saved = Image.save_image(uploaded_image)
+                    image_path = f"images/{saved}"
+                    image_dict = {}
+                    # assign it an ID
+                    try:
+                        image_dict = db['Images']
+                        old_image_id = db['ImageIDs']
+                        new_image_id = old_image_id + 2
+                    except:
+                        print("Error in retrieving Image from image.db")
+                        db['ImageIDs'] = 3
+                        new_image_id = db['ImageIDs'] + 2
+                    # save the image using {ID: image}
+                    image_dict[new_image_id] = image_path
                     db['Images'] = image_dict
-        else:
-            for uploaded_image in request.files.getlist('images'):
-                # save the image
-                saved = Image.save_image(uploaded_image)
-                image_path = f"images/{saved}"
-                image_dict = {}
-                # assign it an ID
-                try:
-                    image_dict = db['Images']
-                    old_image_id = db['ImageIDs']
-                    new_image_id = old_image_id + 2
-                except:
-                    print("Error in retrieving Image from image.db")
-                    db['ImageIDs'] = 3
-                    new_image_id = db['ImageIDs'] + 2
-                # save the image using {ID: image}
-                image_dict[new_image_id] = image_path
-                db['Images'] = image_dict
-                db['ImageIDs'] = new_image_id
-                print(f"total images: {image_dict}")                                       
-                relevant_image_IDs.append(new_image_id)
-        db.close()
-        category = create_product.category.data
-        list_of_category = ['All'] + category
-                
-        product_dict = {}
-        db = shelve.open('storage.db', 'c')
-        
-        try:
-            product_dict = db['Products']
-            product_id = db['ProductIDs']
-            Product.product_id = product_id
+                    db['ImageIDs'] = new_image_id
+                    print(f"total images: {image_dict}")                                       
+                    relevant_image_IDs.append(new_image_id)
+            db.close()
+            category = create_product.category.data
+            list_of_category = ['All'] + category
 
-        except:
-            print("Error in retrieving Products from storage.db")
-            db['Products'] = {}
-        product = Product(create_product.name.data, create_product.description.data, create_product.qty.data, 
-                          create_product.selling_price.data, create_product.cost_price.data, create_product.visible.data, relevant_image_IDs,list_of_category)
-        product_dict[product.get_product_id()] = product
-        db['Products'] = product_dict
-        db['ProductIDs'] = Product.product_id
-        db.close()
-        print(f"product printing {product}")
-        flash(f'Product {create_product.name.data} created!', 'success')
-        return redirect(url_for('product_management'))
+            product_dict = {}
+            db = shelve.open('storage.db', 'c')
+
+            try:
+                product_dict = db['Products']
+                product_id = db['ProductIDs']
+                Product.product_id = product_id
+
+            except:
+                print("Error in retrieving Products from storage.db")
+                db['Products'] = {}
+            product = Product(create_product.name.data, create_product.description.data, create_product.qty.data, 
+                              create_product.selling_price.data, create_product.cost_price.data, create_product.visible.data, relevant_image_IDs,list_of_category)
+            product_dict[product.get_product_id()] = product
+            db['Products'] = product_dict
+            db['ProductIDs'] = Product.product_id
+            db.close()
+            print(f"product printing {product}")
+            flash(f'Product {create_product.name.data} created!', 'success')
+            return redirect(url_for('product_management'))
+        if action == 'generate':
+            if create_product.description.data:
+                response = generate_response(create_product.description.data, create_product.name.data)
+                create_product.description.data = response
+                flash('Description generated successfully!', 'success')
+            else:
+                flash('Please enter a description to generate.', 'warning')
+            return render_template('create-product.html', form=create_product, title = "Create Product")
     return render_template('create-product.html', form=create_product, title = "Create Product")
+
+def generate_response(text, product_name):
+    prompt = (
+    f"You are tasked with writing a product description for {product_name}, for a gardening website. "
+    "Your output must be under 100 words. Write in a friendly and informative tone. "
+    "If necessary, present these points as bullet points using a hyphen followed by a space at the beginning of the line. Leave a blank line for each new bullet point."
+    "Do not ask questions or request further details; only output the refined description. It must be under 100 words. "
+    "Original pointers: " + text + "\n include all original pointers provided above in your refined description. Include days to maturity, care insturctions, quantity in each packet, etc."
+    
+)
+
+    command = f"ollama run llama3.2:3b '{prompt}'"
+    print(f"Running command: {command}")
+    try:
+        # Run the command and capture the output
+        result = subprocess.run(command, capture_output=True, text=True, check=True, shell=True)
+        print(f"Command output: {result.stdout}")
+        # The response is expected in stdout
+        response = result.stdout.strip()
+    except:
+        response = f"Error generating response. Please ensure Ollama is installed and running and try again."
+
+    return response
+
+
 
 @app.route('/import-products', methods=['GET', 'POST'])
 def import_products():
@@ -891,26 +927,60 @@ def initialise_admin():
     flash("Admin account created successfully.", 'success')
     return redirect(url_for('login'))
 
-@app.route('/product-management')
-def product_management():
+@app.route('/product-management', defaults={'category': None}, methods=['GET', 'POST'])
+@app.route('/product-management/category/<category>', methods=['GET', 'POST'])
+def product_management(category):
     products_dict = {}
     try:
         db = shelve.open('storage.db', 'r')
     except:
         print("Error in retrieving data from storage.db")
         db = shelve.open('storage.db', 'c')
-        db['Products'] = {}
 
     products_dict = db['Products']
+    cat_dict = db['Categories']
+    cat_list = []
+    for val, label in cat_dict.items():
+        cat_list.append((val, label))
     db.close()
     
+    # category filter
     products_list = []
-    for key in products_dict:
-        product = products_dict.get(key)        
-        product.display_image = product.display_first_img()
-        products_list.append(product)
-    
-    return render_template('product-management.html', products_list=products_list, title = "Manage Products")
+    if category is None or category == "All":
+        for key in products_dict:
+            product = products_dict.get(key)        
+            product.display_image = product.display_first_img()
+            products_list.append(product)
+    else:
+        for key in products_dict:
+            product = products_dict.get(key)
+            list_of_cat = product.get_category()
+            for cat in list_of_cat:
+                if cat == category:
+                    product.display_image = product.display_first_img()
+                    products_list.append(product)
+                    break
+                
+    # search function         
+    search = request.args.get('q', '').lower().strip()
+    if search:
+        search_list = []
+        for product in products_list: # search in name, description, and product id
+            if (search in product.get_name().lower() or
+                search in product.get_description().lower() or
+                search in str(product.get_product_id()).lower()):
+                search_list.append(product)
+        products_list = search_list
+
+    # Partial response handling using htmx
+    if request.headers.get('HX-Request'):
+        return render_template('includes/product_management_partial.html', 
+                               products_list=products_list, 
+                               cat_list=cat_list, 
+                               title="Manage Products")
+
+    return render_template('product-management.html', products_list=products_list, cat_list=cat_list, title="Manage Products")
+
 
 
 @app.route('/inventory', methods = ['GET', 'POST'])
@@ -964,8 +1034,8 @@ def update_product(id):
         product.set_cost_price(update_product.cost_price.data)
         product.set_visible(update_product.visible.data)
         product.set_category(update_product.category.data)
-        
-        if request.method == 'POST' and update_product.validate():
+        action = request.form.get('action')
+        if action == 'Submit': 
             for uploaded_image in request.files.getlist('images'):
                 if uploaded_image.filename == '': # if no image uploaded
                     break
@@ -986,12 +1056,23 @@ def update_product(id):
                     db['ImageIDs'] = new_image_id
                     product.add_image_id(new_image_id)
                     product.check_default_image()
-                    
-        products_dict[id] = product
-        db['Products'] = products_dict
-        db.close()
-        flash(f'Product {update_product.name.data} updated!', 'success')
-        return redirect(url_for('product_management'))
+
+            products_dict[id] = product
+            db['Products'] = products_dict
+            db.close()
+            flash(f'Product {update_product.name.data} updated!', 'success')
+            return redirect(url_for('product_management'))
+        if action == 'generate':
+            if update_product.description.data:
+                response = generate_response(update_product.description.data, update_product.name.data)
+                update_product.description.data = response
+                flash('Description generated successfully!', 'success')
+            else:
+                flash('Please enter a description before generating!', 'danger')
+            return render_template('update-product.html', form=update_product, title = "Update Product", product = product)
+        
+    
+    
     else: # for the get request - preload the page with existing details
           # idk why but theres type error if i dont fill it?
         products_dict = {}
@@ -1444,12 +1525,12 @@ def approved_partners():
 
 def get_waste_data():
     """Retrieve stored waste data."""
-    with shelve.open("storage") as db:
+    with shelve.open("storage.db") as db:
         return db.get("waste_records", {"history": [], "total_waste": 0, "total_fertilizer": 0})
 
 def save_waste_data(data):
     """Save updated waste data."""
-    with shelve.open("storage", writeback=True) as db:
+    with shelve.open("storage.db", writeback=True) as db:
         db["waste_records"] = data
 
 @app.route('/N', methods=['GET', 'POST'])
@@ -1494,6 +1575,10 @@ def n_dashboard():
         total_fertilizer=waste_data["total_fertilizer"]
     )
 
+@app.route('/search-by-image', methods=['POST'])
+def image_search_route():
+    return search_by_image()
+
 
 def run():
     if __name__ == '__main__':
@@ -1502,4 +1587,3 @@ def run():
         app.run(debug=True)
 
 run()
-

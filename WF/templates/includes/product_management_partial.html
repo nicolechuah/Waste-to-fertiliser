@@ -1,0 +1,83 @@
+<div id = "products_list">
+    <table class="table table-striped">
+      <thead>
+          <tr>
+              <th></th>
+              <th>ID</th>
+              <th>Name</th>
+              <th>Description</th>
+              <th>Selling Price</th>
+              <th>Cost Price</th>
+              <th>
+                  <h4>Visible</h4>
+              </th>
+          </tr>
+      </thead>
+      <tbody>
+          {% for product in products_list %}
+          <tr>
+              <td>
+                  <!-- No need for conditional checks; use the validated display_image -->
+                  <img src="{{ url_for('static', filename= product.display_image) }}" 
+                       alt="{{ product.get_name() }}" 
+                       style="width: 100px; height: 100px;">
+              </td>
+              <td>{{ product.get_product_id() }}</td>
+              <td>{{ product.get_name() }}</td>
+              <td>{{ product.get_description() }}</td>
+              <td>{{ product.get_selling_price() }}</td>
+              <td>{{ product.get_cost_price() }}</td>
+              
+              <td>
+                  {% if product.get_visible() %}
+                      Visible
+                  {% else %}
+                      Hidden
+                  {% endif %}
+              </td>
+              <td>
+                  <div class="btn-group gap-2">
+                      <a href="/update-product/{{ product.get_product_id() }}" 
+                         class="btn btn-warning">Update</a>
+                      <form action="" method="POST" class="d-inline">
+                          <button type="button" 
+                                  class="btn btn-danger" 
+                                  data-bs-toggle="modal" 
+                                  data-bs-target="#myModal_{{ product.get_product_id() }}">
+                              Delete
+                          </button>
+                      </form>
+                  </div>
+      
+                  <!-- THE MODAL -->
+                  <div class="modal" id="myModal_{{ product.get_product_id() }}">
+                      <div class="modal-dialog">
+                          <div class="modal-content">
+                              <!-- Modal Header -->
+                              <div class="modal-header">
+                                  <h4 class="modal-title">Delete Confirmation</h4>
+                                  <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                              </div>
+      
+                              <!-- Modal Body -->
+                              <div class="modal-body">
+                                  Are you sure you want to delete Product ID {{ product.get_product_id() }}: {{ product.get_name() }}?
+                              </div>
+      
+                              <!-- Modal Footer -->
+                              <div class="modal-footer">
+                                  <form action="{{ url_for('delete_product', id=product.get_product_id()) }}" method="POST">
+                                      <input type="submit" value="Delete" class="btn btn-danger"/>
+                                  </form>
+                                  <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                              </div>
+                          </div>
+                      </div>
+                  </div>
+              </td>
+          </tr>
+          {% endfor %}
+      </tbody>
+      
+    </table>
+  </div>

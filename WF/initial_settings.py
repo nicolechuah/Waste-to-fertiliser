@@ -1,4 +1,5 @@
 from Product import Product
+from User import User
 import shelve
 
 product_list = [Product("Organic Fertiliser - 100g", "This organic fertiliser is made from our food waste compost. It contains no chemical, contains no harmful pathogens, improves soil organic matter, serves as a strong foundation to bare soil, is suitable for all plants, creates savings for users,has a high NPK value and no offensive odour.",500,3.00, 0.50, True,[1],["All", "Fertiliser"]), 
@@ -107,8 +108,43 @@ def image_insert_to_db():
     db.close()
 
     
+user_list = [
+    User(1, "admin1", "admin1@wf.com", "123", True),
+    User(2, "bob", "bob@nyp.com", "123", False),
+    User(3, "charlie", "charlie@gmail.com", "123", False),
+    User(4, "david", "david@nyp.com", "123", False),
+    User(5, "eva", "eva@nyp.com", "123", False),
+    User(6, "frank", "frank@nyp.com", "123", False),
+    User(7, "grace", "grace@gmail.com", "123", False),
+    User(8, "henry", "henry@nyp.com", "123", False),
+    User(9, "isabella", "isabella@nyp.com", "123", False),
+    User(10, "jack", "jack@yahoo.com", "123", False)
+]
+
+def user_insert_to_db(user_list):
+    db = shelve.open('storage.db', 'c')
+
+    try:
+        users_dict = db['Users']
+    except KeyError:
+        print('Error in retrieving Users from storage.db')
+        db["Users"] = {}
+        users_dict = db['Users']
+
+    if len(users_dict) < 5:
+        for user in user_list:
+            users_dict[user.get_user_id()] = user
+        db['Users'] = users_dict
+        print('Users created!')
+    else:
+        print('Users already exist!')
+    
+    db.close()
+
+# Modify insert_all to include user insertion
 def insert_all():
     product_insert_to_db(product_list)
     categories_insert_to_db(categories)
     image_insert_to_db()
+    user_insert_to_db(user_list)
     
