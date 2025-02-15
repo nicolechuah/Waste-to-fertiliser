@@ -4,13 +4,11 @@ from AllForms import CollectFood,ReviewForm, InventoryForm
 from flask_bcrypt import Bcrypt
 from flask_login import login_user, current_user, logout_user, login_required, LoginManager
 from datetime import datetime, timedelta
-import shelve, User, initial_settings, subprocess
+import shelve, User, initial_settings, subprocess ,os, random, secrets
 from PIL import Image
 import pandas as pd
 from datetime import datetime
 from werkzeug.utils import secure_filename
-import os
-import secrets
 from Product import Product
 from Review import Review
 import shelve
@@ -1153,37 +1151,48 @@ def view_product(id):
         db['Reviews'] = {}
         reviews_dict = db['Reviews']
     db.close()
-    product = products_dict.get(id)
-    
+    products_list = []
+    for key in products_dict:
+        product = products_dict.get(key)
+        products_list.append(product)
+
+    random.shuffle(products_list)
+
     review_list = []
     for review in reviews_dict.values():
         if review.get_product_id() == id:
             review_list.append(review)
     review_form = ReviewForm()
-    if request.method == 'POST'and request.form.get('rating'):
+    if request.method == 'POST' and 'rating' in request.form:
         try:
-            author = session['username']
-        except:
-            author = "Anonymous"
-        rating = review_form.rating.data
-        comment = review_form.comment.data
-        date = datetime.today().strftime('%Y-%m-%d')
-        product_id = id
-        review_dict = {}
-        db = shelve.open('storage.db', 'c')
-        try:
-            review_dict = db['Reviews']
-            review_id = db['ReviewIDs']
-            Review.review_id = review_id
-        except:
-            print("Error in retrieving Reviews from storage.db")
-        review = Review(author, rating, comment, product_id,date)
-        review_dict[review.get_review_id()] = review
-        db['Reviews'] = review_dict
-        db['ReviewIDs'] = Review.review_id
-        db.close()
-        print(review)
-        flash('Review submitted!', 'success')
+            author = session.get('username', "Anonymous")
+            rating = review_form.rating.data
+            comment = review_form.comment.data.strip()
+            date = datetime.today().strftime('%Y-%m-%d')
+            
+            # Open database in write mode
+            with shelve.open('storage.db', writeback=True) as db:
+                # Get or create reviews collection
+                reviews_dict = db.setdefault('Reviews', {})
+                review_id = db.get('ReviewIDs', 0)
+                
+                # Create and store new review
+                new_review = Review(author, rating, comment, id, date)
+                print(new_review)
+                reviews_dict[new_review.get_review_id()] = new_review
+                
+                # Update review ID counter
+                db['ReviewIDs'] = review_id + 1
+                db.sync()
+            
+                
+            flash('Review submitted successfully!', 'success')
+            return redirect(url_for('view_product', id=id))
+
+        except Exception as e:
+            print(f"Error submitting review: {str(e)}")
+            flash('Error submitting review. Please try again.', 'danger')
+            return redirect(url_for('view_product', id=id))
     if request.method == 'POST' and request.form.get('product_name'):
         product_name = request.form.get('product_name')
         unit_price = float(request.form.get('unit_price', 0))
@@ -1213,7 +1222,7 @@ def view_product(id):
         except Exception as e:
             flash(f"Error adding product to cart: {e}", 'danger')
     return render_template('view-product.html', product=product, title = "View Product",
-                           review_form=review_form, review_list=review_list)
+                           review_form=review_form, review_list=review_list, products_list=products_list[:5])
     
 
 
