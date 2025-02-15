@@ -111,14 +111,14 @@ def image_insert_to_db():
 user_list = [
     User(1, "admin1", "admin1@wf.com", "123", True),
     User(2, "bob", "bob@nyp.com", "123", False),
-    User(3, "charlie", "charlie@nyp.com", "123", False),
+    User(3, "charlie", "charlie@gmail.com", "123", False),
     User(4, "david", "david@nyp.com", "123", False),
     User(5, "eva", "eva@nyp.com", "123", False),
     User(6, "frank", "frank@nyp.com", "123", False),
-    User(7, "grace", "grace@nyp.com", "123", False),
+    User(7, "grace", "grace@gmail.com", "123", False),
     User(8, "henry", "henry@nyp.com", "123", False),
     User(9, "isabella", "isabella@nyp.com", "123", False),
-    User(10, "jack", "jack@nyp.com", "123", False)
+    User(10, "jack", "jack@yahoo.com", "123", False)
 ]
 
 def user_insert_to_db(user_list):
