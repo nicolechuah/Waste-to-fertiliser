@@ -74,7 +74,31 @@
                hx-params="*"
                hx-push-url="true"
                class="form-control">
+    <!-- Button to open modal -->
+    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#imageUploadModal">Search by Image</button>
 
+    <!-- Image Upload Modal -->
+    <div class="modal fade" id="imageUploadModal" tabindex="-1" aria-labelledby="imageUploadModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="imageUploadModalLabel">Upload Image to Search</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div id="drop-zone" class="border border-primary p-4 text-center">
+                            <p>Drag & Drop Image Here or Click to Select</p>
+                            <input type="file" id="imageUpload" accept="image/*" class="form-control d-none">
+                        </div>
+                        <p class="mt-2 text-center" id="file-name"></p>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                        <button class="btn btn-primary" onclick="uploadImage()">Search</button>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
         
 </div>
@@ -133,7 +157,66 @@
     {% endfor %}
 </div>
 
-
+<script>
+    document.getElementById("drop-zone").addEventListener("click", function() {
+        document.getElementById("imageUpload").click();
+    });
+    
+    document.getElementById("imageUpload").addEventListener("change", function(event) {
+        let file = event.target.files[0];
+        if (file) {
+            document.getElementById("file-name").innerText = "Selected: " + file.name;
+        }
+    });
+    
+    document.getElementById("drop-zone").addEventListener("dragover", function(event) {
+        event.preventDefault();
+        event.stopPropagation();
+        this.classList.add("bg-light");
+    });
+    
+    document.getElementById("drop-zone").addEventListener("dragleave", function(event) {
+        event.preventDefault();
+        event.stopPropagation();
+        this.classList.remove("bg-light");
+    });
+    
+    document.getElementById("drop-zone").addEventListener("drop", function(event) {
+        event.preventDefault();
+        event.stopPropagation();
+        this.classList.remove("bg-light");
+        let file = event.dataTransfer.files[0];
+        if (file) {
+            document.getElementById("imageUpload").files = event.dataTransfer.files;
+            document.getElementById("file-name").innerText = "Selected: " + file.name;
+        }
+    });
+    
+    function uploadImage() {
+        let fileInput = document.getElementById('imageUpload');
+        if (fileInput.files.length === 0) {
+            alert('Please select an image first!');
+            return;
+        }
+        
+        let formData = new FormData();
+        formData.append('image', fileInput.files[0]);
+        
+        fetch('/search-by-image', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                window.location.href = `/view-product/${data.product_id}`;
+            } else {
+                alert('No matching product found!');
+            }
+        })
+        .catch(error => console.error('Error:', error));
+    }
+    </script>
 
     
 {% endblock %}

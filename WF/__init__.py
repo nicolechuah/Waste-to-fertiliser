@@ -17,6 +17,7 @@ import shelve
 from Fwfuser import FWFUser
 from Collect import Collect
 from Image import Image
+from image_search import search_by_image 
 
 
 app = Flask(__name__)
@@ -1493,6 +1494,10 @@ def n_dashboard():
         total_waste=waste_data["total_waste"],
         total_fertilizer=waste_data["total_fertilizer"]
     )
+
+@app.route('/search-by-image', methods=['POST'])
+def image_search_route():
+    return search_by_image()
 
 
 def run():
