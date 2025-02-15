@@ -1,5 +1,5 @@
 {% extends "base.html" %} {% block content %}
-<div class="d-flex justify-content-between pb-5">
+<div class="d-flex justify-content-between pb-3">
   <h1>Product Management</h1>
   <div>
     <a href="{{url_for('create_product')}}" class="px-1 btn btn-light ">Create Product</a>
@@ -8,9 +8,32 @@
   </div>
 </div>
 <div>
+	<div class="container">
+        <input type="search" 
+               name="q" 
+               placeholder="Search products..."
+               hx-get="{{ url_for('product_management', category=category) if category else url_for('product_management') }}"
+               hx-trigger="keyup changed delay:500ms"
+               hx-target="#products_list"
+               hx-params="*"
+               hx-push-url="true"
+               class="form-control">
+
+    </div>
+	<div class="dropdown">
+        <button  class="btn dropdown-toggle" type="button" id="dropdownMenuButton2" data-bs-toggle="dropdown" aria-expanded="false">
+          Sort by
+        </button>
+        <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton2">
+			{% for val, label in cat_list %}
+            <li class="p-2"><a href="{{url_for('product_management', category = val)}}">{{label}}</a></li>
+			{% endfor %}
+			</li>
+        </ul>
+    </div>
 	
 </div>
-<div>
+<div id = "products_list">
   <table class="table table-striped">
     <thead>
     	<tr>
