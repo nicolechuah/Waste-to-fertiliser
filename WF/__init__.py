@@ -1442,6 +1442,58 @@ def approved_partners():
     # Render the Approved Partners page with the list of approved partners
     return render_template('ApproveCollect.html', count=len(partners_list), partners_list=partners_list)
 
+def get_waste_data():
+    """Retrieve stored waste data."""
+    with shelve.open("storage") as db:
+        return db.get("waste_records", {"history": [], "total_waste": 0, "total_fertilizer": 0})
+
+def save_waste_data(data):
+    """Save updated waste data."""
+    with shelve.open("storage", writeback=True) as db:
+        db["waste_records"] = data
+
+@app.route('/N', methods=['GET', 'POST'])
+def n_dashboard():
+    waste_data = get_waste_data()
+
+    # Retrieve approved partners
+    db = shelve.open('storage.db', 'r')
+    approved_partners = db.get('Approvedusers', {})
+    db.close()
+
+    if request.method == 'POST':
+        partner_id = int(request.form.get("partner_id"))
+        collected_waste = float(request.form.get("collected_waste", 0))
+
+        # Find selected partner
+        partner_name = approved_partners.get(partner_id).get_name() if partner_id in approved_partners else "Unknown"
+
+        # Add today's waste data
+        today_date = datetime.now().date()
+        waste_entry = {
+            "date": str(today_date),
+            "partner_id": partner_id,
+            "partner_name": partner_name,
+            "collected": collected_waste
+        }
+        waste_data["history"].append(waste_entry)
+
+        # Update totals
+        waste_data["total_waste"] += collected_waste
+        new_fertilizer = collected_waste * 0.4
+        waste_data["total_fertilizer"] += new_fertilizer
+
+        save_waste_data(waste_data)
+        return redirect(url_for("n_dashboard"))
+
+    return render_template(
+        "N.html",
+        partners=approved_partners,
+        waste_history=waste_data["history"],
+        total_waste=waste_data["total_waste"],
+        total_fertilizer=waste_data["total_fertilizer"]
+    )
+
 
 def run():
     if __name__ == '__main__':
