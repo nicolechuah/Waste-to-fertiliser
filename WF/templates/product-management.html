@@ -1,22 +1,25 @@
 {% extends "base.html" %} {% block content %}
-<div class="d-flex justify-content-between">
+<div class="d-flex justify-content-between pb-5">
   <h1>Product Management</h1>
   <div>
-    <a href="{{url_for('create_product')}}">Create Product</a>
-	<a href="{{url_for('import_products')}}">Import</a>
-    <button class="btn">Export</button>
+    <a href="{{url_for('create_product')}}" class="px-1 btn btn-light ">Create Product</a>
+	<a href="{{url_for('import_products')}}"class="px-1 btn btn-light ">Import</a>
+    <a class="btn btn-secondary" href = "{{url_for('export_products')}}">Export</a>
   </div>
+</div>
+<div>
+	
 </div>
 <div>
   <table class="table table-striped">
     <thead>
     	<tr>
 			<th></th>
-        	<th><h4>Product ID</h4></th>
-        	<th><h4>Name</h4></th>
-        	<th><h4>Description</h4></th>
-        	<th><h4>Selling Price</h4></th>
-        	<th><h4>Cost Price</h4></th>
+        	<th>ID</th>
+        	<th>Name</th>
+        	<th>Description</th>
+        	<th>Selling Price</th>
+        	<th>Cost Price</th>
 			<th>
 				<h4>Visible</h4>
 			</th>
@@ -36,6 +39,7 @@
 			<td>{{ product.get_description() }}</td>
 			<td>{{ product.get_selling_price() }}</td>
 			<td>{{ product.get_cost_price() }}</td>
+			
 			<td>
 				{% if product.get_visible() %}
 					Visible

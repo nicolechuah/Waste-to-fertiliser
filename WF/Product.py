@@ -12,8 +12,8 @@ class Product():
         self.__selling_price = selling_price
         self.__cost_price = cost_price
         self.__visible = visible
-        self.__images_id = images
-        self.__category = category
+        self.__images_id = images #list of image ids
+        self.__category = category #list of category
     
 
     

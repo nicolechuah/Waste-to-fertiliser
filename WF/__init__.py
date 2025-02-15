@@ -1,4 +1,4 @@
-from flask import Flask, render_template, url_for, flash, redirect, request, session
+from flask import Flask, render_template, url_for, flash, redirect, request, session,send_file,jsonify
 from AllForms import RegistrationForm, LoginForm, AccountForm, ResetPasswordForm, ProductForm, UserFWF, CheckoutForm, PaymentForm
 from AllForms import CollectFood,ReviewForm, InventoryForm
 from flask_bcrypt import Bcrypt
@@ -6,6 +6,7 @@ from flask_login import login_user, current_user, logout_user, login_required, L
 from datetime import datetime, timedelta
 import shelve, User, initial_settings
 from PIL import Image
+import pandas as pd
 from datetime import datetime
 from werkzeug.utils import secure_filename
 import os
@@ -23,12 +24,16 @@ app = Flask(__name__)
 app.config['SECRET_KEY'] = 'd6691973382147ed2b8724aa19eb0720'
 app.config['UPLOAD_FOLDER'] = os.path.join(app.root_path, 'static', 'images')
 app.config['MAX_CONTENT_LENGTH'] = 10 *1024 * 1024
+TEMP_FOLDER = os.path.join(app.root_path, 'temp') # temp folder for file uploads
+if not os.path.exists(TEMP_FOLDER):
+    os.makedirs(TEMP_FOLDER)
 ALLOW_INIT_ADMIN = True  # Set to True to allow the creation of an initial admin account
 
 
 
-@app.route('/', methods=['GET', 'POST'])
-def home():
+@app.route('/', defaults={'category': None}, methods=['GET', 'POST'])
+@app.route('/category/<category>', methods=['GET', 'POST'])
+def home(category):
     try:
         db = shelve.open('storage.db', 'r')
         products_dict = db['Products']
@@ -43,76 +48,152 @@ def home():
         db['Categories'] = {}
         cat_dict = db['Categories']
     db.close()
+
+    # Create category list
     cat_list = []
     for val, label in cat_dict.items():
         cat_list.append((val, label))
 
-    products_list = []
-    for key in products_dict:
-        product = products_dict.get(key)
-        product.display_image = product.display_first_img()
-        products_list.append(product)
 
+    products_list = []
+    if category is None or category == "All":
+        for key in products_dict:
+            product = products_dict.get(key)
+            product.display_image = product.display_first_img()
+            products_list.append(product)
+    else:
+        for key in products_dict:
+            product = products_dict.get(key)
+            list_of_cat = product.get_category()
+            for cat in list_of_cat:
+                if cat == category:
+                    product.display_image = product.display_first_img()
+                    products_list.append(product)
+                    break
+    search = request.args.get('q', '').lower().strip()
+    search_list = []
+    if search:
+        for product in products_list:
+            if search in product.get_name().lower():
+                search_list.append(product)
+    products_list = search_list if search else products_list
+    # partial response handling 
+    if request.headers.get('HX-Request'):
+        return render_template('includes/home_partial.html', products_list=products_list, cat_list=cat_list, title="Home")
+    # uses a partial page meaing that it only updates the part of the page that is needed by id (hx-target)
+
+    # Process POST request for adding product to cart
     if request.method == 'POST':
         product_name = request.form.get('product_name')
         unit_price = float(request.form.get('unit_price', 0))
-
         if product_name:
             try:
                 quantity = 1
                 with shelve.open('storage.db', writeback=True) as db:
                     if 'cart' not in db:
                         db['cart'] = {'items': []}
-
                     cart_items = db['cart']['items']
-
+                    found = False
                     for item in cart_items:
                         if item['name'] == product_name:
                             item['quantity'] += quantity
                             item['total_price'] = item['unit_price'] * item['quantity']
+                            found = True
                             break
-                    else:
+                    if not found:
                         cart_items.append({
                             'name': product_name,
                             'unit_price': unit_price,
                             'quantity': quantity,
                             'total_price': unit_price * quantity
                         })
-
                     db['cart']['items'] = cart_items
                 flash(f"{product_name} successfully added to cart!", 'success')
             except Exception as e:
                 flash(f"Error adding product to cart: {e}", 'danger')
 
-    return render_template('home.html', products_list=products_list, cat_list = cat_list, title="Home") 
+    # Set the page title depending on whether a category is selected
+    if category is None or category == "All":
+        title = "Home"
+    else:
+        title = category
 
-@app.route('/category/<category>', methods=['GET'])
-def category(category):
+    return render_template('home.html', products_list=products_list, cat_list=cat_list, title=title)
+
+@app.route('/filter/<sort_key>', methods=['GET', 'POST'], endpoint='filter')
+def filter_products(sort_key):
+    # Open the shelve database and get products and categories
     try:
         db = shelve.open('storage.db', 'r')
         products_dict = db.get('Products', {})
+        cat_dict = db.get('Categories', {})
+    except Exception as e:
+        print("Error retrieving data from storage.db:", e)
+        db = shelve.open('storage.db', 'c')
+        db['Products'] = {}
+        products_dict = db['Products']
+        db['Images'] = {}
+        db['Categories'] = {}
         cat_dict = db['Categories']
-    except:
-        print("Error retrieving data from storage.db")
-        products_dict = {}
-    finally:
-        db.close()
-    products_list =[]
-    for key, value in products_dict.items():
-        print(value)
-        list_of_cat = value.get_category()
-        print(f"list of cat: {list_of_cat}")
-        for cat in list_of_cat:
-            if cat == category:
-                products_list.append(value)
+    db.close()
     cat_list = []
     for val, label in cat_dict.items():
         cat_list.append((val, label))
 
-    # Render a category page with the filtered products
-    return render_template('category.html', products_list=products_list, cat_list = cat_list, title=f"{category.capitalize()}")
+ 
+    products_list = []
+    for prod_key in products_dict:
+        product = products_dict.get(prod_key)
+        product.display_image = product.display_first_img()
+        products_list.append(product)
 
-    
+    if sort_key == 'ratings':
+        def get_rating(product):
+            try:
+                return float(product.get_average_rating())
+            except:
+                return 0.0
+        products_list.sort(key=get_rating)
+        title = "Products by Rating"
+    elif sort_key == 'hightolow':
+        products_list.sort(key=lambda product: product.get_selling_price(), reverse=True)
+        title = "Products: Price High to Low"
+    elif sort_key == 'lowtohigh':
+        products_list.sort(key=lambda product: product.get_selling_price())
+        title = "Products: Price Low to High"
+    else:
+        title = "Products"
+        products_list.sort(key=lambda product: product.get_name())
+# Process POST request for adding product to cart
+    if request.method == 'POST':
+        product_name = request.form.get('product_name')
+        unit_price = float(request.form.get('unit_price', 0))
+        if product_name:
+            try:
+                quantity = 1
+                with shelve.open('storage.db', writeback=True) as db:
+                    if 'cart' not in db:
+                        db['cart'] = {'items': []}
+                    cart_items = db['cart']['items']
+                    found = False
+                    for item in cart_items:
+                        if item['name'] == product_name:
+                            item['quantity'] += quantity
+                            item['total_price'] = item['unit_price'] * item['quantity']
+                            found = True
+                            break
+                    if not found:
+                        cart_items.append({
+                            'name': product_name,
+                            'unit_price': unit_price,
+                            'quantity': quantity,
+                            'total_price': unit_price * quantity
+                        })
+                    db['cart']['items'] = cart_items
+                flash(f"{product_name} successfully added to cart!", 'success')
+            except Exception as e:
+                flash(f"Error adding product to cart: {e}", 'danger')
+    return render_template('home.html', products_list=products_list, cat_list=cat_list, title=title)
                         
 @app.route('/products', methods=['GET', 'POST'])
 def products():
@@ -466,14 +547,6 @@ def account():
             current_user.set_password(form.password.data)
             updated = True
 
-        # Update profile picture
-        '''
-        if form.picture.data:
-            picture_file = save_picture(form.picture.data)
-            current_user.set_profile_picture(picture_file)
-            updated = True
-        '''
-
         # Save changes to the database
         if updated:
             users_dict[current_user_id] = current_user 
@@ -643,8 +716,94 @@ def create_product():
 
 @app.route('/import-products', methods=['GET', 'POST'])
 def import_products():
-    pass
+    if request.method == "GET":
+        return render_template('import-products.html', title="Import Products")
+    file = request.files['file']
+    filename = secure_filename(file.filename)
+    temp_file_path = os.path.join(app.root_path, 'temp', filename)
+    file.save(temp_file_path)
+    try:
+        df = pd.read_excel(temp_file_path, engine = 'openpyxl')
+        
+        #counter
+        stats = 0
+        db = shelve.open('storage.db', 'c')
+        products_dict = db.get('Products', {})
+        for x, row in df.iterrows():
+            name = row['Name']
+            description = row['Description']
+            qty = row['Quantity']
+            selling_price = row['Selling Price']
+            cost_price = row['Cost Price']
+            visible = row['Visible']
+            images = [1]
+            category_string = row['Category']  # Output: "['All', 'Pots']"
+            trimming = category_string[1:-1]
+            category = []
 
+            for cat in trimming.split(","):
+            # remove spaces, then remove the single quotes
+                cleaned_cat = cat.strip().strip("'")
+                category.append(cleaned_cat)
+
+            print(category)  # Output: ['All', 'Pots']
+            print(type(category))  # Output: <class 'list'>
+            
+            new_product = Product(name, description, qty, selling_price, cost_price, visible, images, category)
+            products_dict[new_product.get_product_id()] = new_product
+            stats += 1
+        db['Products'] = products_dict
+        db.close()
+        if os.path.exists(temp_file_path):
+            os.remove(temp_file_path)
+        if request.accept_mimetypes.accept_json: 
+            return jsonify({  # only becaue dropzone uses ajax, jsonify helps to return json response
+                              # passes this to javascript on import-products.html
+                'success': True,
+                'message': f"Successfully imported {stats} products!",
+                'stats': stats
+            })
+        else:
+            flash(f"Successfully imported {stats} products!", 'success')
+            return redirect(url_for('product_management'))
+    except:
+        if request.accept_mimetypes.accept_json:
+            return jsonify({
+                'success': False,
+                'message': "Error importing products. Please check the file format."
+            })
+        else:
+            flash("Error importing products. Please check the file format.", 'danger')
+    return redirect(url_for('product_management'))
+            
+
+@app.route('/export-products', methods=['GET'])
+def export_products():
+    db = shelve.open('storage.db', 'r')
+    try:
+        products_dict = db['Products']
+    except:
+        print("Error in retrieving Products from storage.db")
+        db.close()
+        return redirect(url_for('product_management'))
+    product_objects = []
+    for key, obj in products_dict.items():
+        product_objects.append(obj)
+    object_info = []
+    for object in product_objects:
+            object_info.append({"Product ID": object.get_product_id(), 
+                           "Name": object.get_name(), 
+                           "Description": object.get_description(), 
+                           "Quantity": object.get_qty(), 
+                           "Selling Price": object.get_selling_price(), 
+                           "Cost Price": object.get_cost_price(), 
+                           "Visible": object.get_visible(), 
+                           "Category": object.get_category()})
+    df = pd.DataFrame(object_info)
+    output_file = os.path.join(TEMP_FOLDER, 'products.xlsx')
+    df.to_excel(output_file,index=False)
+    db.close()
+    return send_file(output_file, as_attachment=True)
 
 @app.route("/manageUsers", methods=['GET'])
 def manage_users():

@@ -63,6 +63,10 @@
     filter: none!important; /* Remove the filter when star is checked */
   }
 
+  #products_list {
+    justify-content: center !important;
+}
+
 /* Sidebar Styles */
 #sidebar {
     width: 200px;
@@ -126,6 +130,7 @@
 #main-content {
     margin-left: 200px;
     transition: margin-left 0.3s ease;
+    
 }
 
 /* When Sidebar is Collapsed */
@@ -137,4 +142,5 @@
 .no-sidebar #main-content {
     margin-left: 0 !important;
 }
+
 
