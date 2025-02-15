@@ -1524,12 +1524,12 @@ def approved_partners():
 
 def get_waste_data():
     """Retrieve stored waste data."""
-    with shelve.open("storage") as db:
+    with shelve.open("storage.db") as db:
         return db.get("waste_records", {"history": [], "total_waste": 0, "total_fertilizer": 0})
 
 def save_waste_data(data):
     """Save updated waste data."""
-    with shelve.open("storage", writeback=True) as db:
+    with shelve.open("storage.db", writeback=True) as db:
         db["waste_records"] = data
 
 @app.route('/N', methods=['GET', 'POST'])
