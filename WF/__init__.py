@@ -153,7 +153,7 @@ def filter_products(sort_key):
                 return float(product.get_average_rating())
             except:
                 return 0.0
-        products_list.sort(key=get_rating)
+        products_list.sort(key=get_rating, reverse=True)
         title = "Products by Rating"
     elif sort_key == 'hightolow':
         products_list.sort(key=lambda product: product.get_selling_price(), reverse=True)
@@ -682,7 +682,7 @@ def create_product():
                         new_image_id = old_image_id + 2
                     except:
                         print("Error in retrieving Image from image.db")
-                        db['ImageIDs'] = 3
+                        db['ImageIDs'] = 15
                         new_image_id = db['ImageIDs'] + 2
                     # save the image using {ID: image}
                     image_dict[new_image_id] = image_path
