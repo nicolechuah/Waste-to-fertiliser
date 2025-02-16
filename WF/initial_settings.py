@@ -1,4 +1,5 @@
 from Product import Product
+from Stock import Stock
 from User import User
 import shelve
 
@@ -72,7 +73,7 @@ def product_insert_to_db(product_list):
     db.close()
     
 categories = [("All", "All"),("Fertiliser", "Fertiliser"),("Seeds", "Seeds"),
-              ("Tools", "Gardening Tools"),("Pots", "Pots & Planters"),("Kits", "Gardening Kits")]
+              ("Tools", "Gardening Tools"),("Pots", "Pots & Planters")]
 
 def categories_insert_to_db(categories):
     db = shelve.open('storage.db', 'c')
@@ -140,6 +141,63 @@ def user_insert_to_db(user_list):
         print('Users already exist!')
     
     db.close()
+    
+stock_list = [
+    Stock(1, 50, "2024-01-05"),
+    Stock(2, 40, "2024-01-15"),
+    Stock(3, 30, "2024-02-01"),
+    Stock(4, 25, "2024-02-10"),
+    Stock(5, 60, "2024-02-20"),
+    Stock(1, 55, "2024-03-03"),
+    Stock(2, 45, "2024-03-15"),
+    Stock(3, 35, "2024-03-22"),
+    Stock(4, 20, "2024-04-05"),
+    Stock(5, 65, "2024-04-18"),
+    Stock(1, 50, "2024-05-02"),
+    Stock(2, 40, "2024-05-15"),
+    Stock(3, 30, "2024-06-01"),
+    Stock(4, 25, "2024-06-12"),
+    Stock(5, 60, "2024-06-25"),
+    Stock(1, 55, "2024-07-05"),
+    Stock(2, 45, "2024-07-20"),
+    Stock(3, 35, "2024-08-03"),
+    Stock(4, 20, "2024-08-18"),
+    Stock(5, 65, "2024-09-01"),
+    Stock(1, 50, "2024-09-15"),
+    Stock(2, 40, "2024-10-01"),
+    Stock(3, 300, "2024-10-20"),  # Outlier: unusual high quantity or irregular interval.
+    Stock(4, 25, "2024-11-05"),
+    Stock(5, 60, "2025-02-15"),
+    Stock(1, 45, "2025-02-05"),
+    Stock(2, 30, "2025-02-20"),
+    Stock(3, 50, "2025-03-01"),
+    Stock(4, 55, "2025-03-15"),
+    Stock(5, 60, "2025-03-25")
+]
+
+
+for stock in stock_list[:-10]:
+    stock.confirmed()
+def stock_insert_to_db(stock_list):
+    db = shelve.open('storage.db', 'c')
+    stock_dict = {}
+    try:
+        stock_dict = db['Stock']
+    except KeyError:
+        print('Error in retrieving Stock from storage.db')
+        db["Stock"] = {}
+        stock_dict = db['Stock']
+    if len(stock_dict) < 3:
+        for stock in stock_list:
+            stock_dict[stock.get_stock_id()] = stock
+        db['Stock'] = stock_dict
+        print('Stock created!')
+    else:
+        print('Stock already exist!')
+        
+    db.close()
+
+
 
 # Modify insert_all to include user insertion
 def insert_all():
@@ -147,4 +205,5 @@ def insert_all():
     categories_insert_to_db(categories)
     image_insert_to_db()
     user_insert_to_db(user_list)
+    stock_insert_to_db(stock_list)
     

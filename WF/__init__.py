@@ -11,6 +11,7 @@ from datetime import datetime
 from werkzeug.utils import secure_filename
 from Product import Product
 from Review import Review
+from Stock import Stock
 import shelve
 from Fwfuser import FWFUser
 from Collect import Collect
@@ -1001,21 +1002,61 @@ def inventory():
     
     return render_template('inventory.html', products_list=products_list, form=inventory_form, title = "Inventory")
 
-@app.route('/update-inventory/<int:id>', methods=['POST'])
-def update_inventory(id):
+@app.route('/view-stock', methods=['GET', 'POST']) 
+def view_stock():
+    db = shelve.open('storage.db', 'r')
+    stock_dict = db["Stock"]
+    db.close()
+    stock_list = []
+    for key in stock_dict:
+        stock = stock_dict.get(key)
+        stock_list.append(stock)
+    stock_list.reverse()
+    return render_template('view-stock.html', stock_list=stock_list, title="View Stock")
+
+@app.route('/pending-stock', methods=['GET', 'POST'])
+def pending_stock():
+    db = shelve.open('storage.db', 'r')
+    stock_dict = db["Stock"]
+    db.close()
+    stock_list = []
+    for key in stock_dict:
+        stock = stock_dict.get(key)
+        if stock.get_confirmed_status() == False:
+            stock_list.append(stock)
+    return render_template('pending-stock.html', stock_list=stock_list, title="Pending Stock")
+
+@app.route('/confirm-stock/<int:product_id>/<int:stock_id>', methods=['POST'])
+def confirm_stock(product_id, stock_id):
     inventory_form = InventoryForm(request.form)
-    inventory_form.product_id.data = id
-    if inventory_form.validate() and request.method == 'POST':
-        products_dict = {}
-        db = shelve.open('storage.db', 'w')
-        products_dict = db['Products']
-        product = products_dict.get(id)
-        product.set_qty(inventory_form.qty.data)
-        db['Products'] = products_dict
-        print(product)
-        db.close()
-        flash(f'Inventory for {product.get_name()} updated!', 'success')
-    return redirect(url_for('inventory'))
+    if inventory_form.validate():
+       # in-memory modifications are saved.
+        db = shelve.open('storage.db', 'c', writeback=True)
+        products_dict = db.get('Products', {})
+        product = products_dict.get(product_id)
+        if product:
+            current_qty = product.get_qty()
+            # Update the product quantity by adding the input quantity.
+            product.set_qty(int(current_qty) + int(inventory_form.quantity.data))
+            
+
+            stock_dict = db.get('Stock', {})
+            for a_stock_id in stock_dict:
+                stock = stock_dict.get(stock_id)
+                if not stock.get_confirmed_status():
+                    stock.confirmed()  # mark this stock entry as confirmed
+            
+            db['Products'] = products_dict
+            db['Stock'] = stock_dict
+            db.close()
+            flash(f'Inventory for {product.get_name()} updated!', 'success')
+        else:
+            db.close()
+            flash('Product not found', 'danger')
+    else:
+        flash("Form validation error", "danger")
+    return redirect(url_for('view_stock'))
+
 @app.route('/update-product/<int:id>/', methods=['POST', 'GET'])
 def update_product(id):
     update_product = ProductForm(request.form)

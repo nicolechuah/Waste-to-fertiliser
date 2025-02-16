@@ -21,7 +21,7 @@
 </style>
 
 <div class="d-flex justify-content-between">
-  <h1>Inventory</h1>
+  <h1>Incoming Stock</h1>
   <div>
     <a href="{{url_for('product_management')}}">Manage Products</a>
     <button class="btn">Export Inventory</button>
@@ -36,29 +36,28 @@
   <table class="table table-striped">
     <thead>
     	<tr>
-			<th></th>
+			<th>Estimated Arrival Date</th>
         	<th><h4>Product ID</h4></th>
         	<th><h4>Name</h4></th>
-            <th><h4>Status</h4></th>
-        	<th><h4>Count</h4></th>
+            <th><h4>Count</h4></th>
+                
     	</tr>
     </thead>
     <tbody>
-    	{% for product in products_list %}
-    	<tr>
-			<td><img src="{{ url_for('static', filename=product.display_first_img())}}" 
-				alt="{{ product.get_name() }}" style="width: 50px; height: 50px;">
-			</td>
-        	<td>{{product.get_product_id()}}</td>
-        	<td>{{product.get_name()}}</td>
-            <td>{% if product.get_qty()|int !=0 %}
-                <span class="badge bg-success">In Stock</span>
-                {% else %}
-                <span class="badge bg-danger">Out of Stock</span>
-                {% endif %}
-            </td>
-        	<td>{{product.get_qty()}}</td>
-    	</tr>
+        {% for stock in stock_list %}
+        {% if not stock.get_confirmed_status() %}
+        <tr>
+            <td>{{stock.get_date()}}</td>
+        	<td>{{stock.get_product_id()}}</td>
+        	<td>{{stock.get_product_name()}}</td>
+        	<td>{{stock.get_quantity()}}</td>
+            <form method="POST" action="{{ url_for('confirm_stock', product_id=stock.get_product_id(), stock_id = stock.get_stock_id()) }}" enctype="multipart/form-data">
+                <input type="hidden" name="product_id" value="{{stock.get_product_id()}}">
+                <input type="hidden" name="quantity" value="{{stock.get_quantity()}}">
+                <td><button type="submit" class="btn btn-success">Recieved</button></td>
+            </form>
+        </tr>
+        {% endif %}
 		{% endfor %}
     </tbody>
   </table>
