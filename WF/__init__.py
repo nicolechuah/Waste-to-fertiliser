@@ -153,7 +153,7 @@ def filter_products(sort_key):
                 return float(product.get_average_rating())
             except:
                 return 0.0
-        products_list.sort(key=get_rating)
+        products_list.sort(key=get_rating, reverse=True)
         title = "Products by Rating"
     elif sort_key == 'hightolow':
         products_list.sort(key=lambda product: product.get_selling_price(), reverse=True)
