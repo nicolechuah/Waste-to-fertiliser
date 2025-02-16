@@ -1,6 +1,7 @@
 from Product import Product
 from Stock import Stock
 from User import User
+from Review import Review
 import shelve
 
 product_list = [Product("Organic Fertiliser - 100g", "This organic fertiliser is made from our food waste compost. It contains no chemical, contains no harmful pathogens, improves soil organic matter, serves as a strong foundation to bare soil, is suitable for all plants, creates savings for users,has a high NPK value and no offensive odour.",500,3.00, 0.50, True,[1],["All", "Fertiliser"]), 
@@ -186,6 +187,42 @@ def stock_insert_to_db(stock_list):
         
     db.close()
 
+rating_list = [
+    Review("jack", 5, "Excellent product!", 2, "2025-02-10"),
+    Review("frank", 3, "Decent, but could be better.", 2, "2025-02-12"),
+
+    Review("grace", 4, "Works well, satisfied!", 14, "2025-02-15"),
+    Review("henry", 2, "Not what I expected.", 14, "2025-02-17"),
+
+    Review("isabella", 5, "Amazing! Highly recommend.", 25, "2025-03-05"),
+    Review("david", 1, "Terrible experience.", 25, "2025-03-07"),
+
+    Review("eva", 3, "It's okay, nothing special.", 26, "2025-03-10"),
+    Review("charlie", 2, "Had some issues, not the best.", 26, "2025-03-12"),
+
+    Review("bob", 4, "Pretty good overall!", 4, "2025-03-20"),
+    Review("henry", 5, "Exceeded my expectations!", 4, "2025-03-22"),
+]
+
+def review_insert_to_db(rating_list):
+    db = shelve.open('storage.db', 'c')
+    rating_dict = {}
+    try:
+        rating_dict = db['Reviews']
+    except KeyError:
+        print('Error in retrieving Reviews from storage.db')
+        db["Reviews"] = {}
+        rating_dict = db['Reviews']
+    if len(rating_dict) < 3:
+        for rating in rating_list:
+            rating_dict[rating.get_review_id()] = rating
+        db['Reviews'] = rating_dict
+        print('Reviews created!')
+    else:
+        print('Reviews already exist!')
+        
+    db.close()
+
 
 
 # Modify insert_all to include user insertion
@@ -195,4 +232,5 @@ def insert_all():
     image_insert_to_db()
     user_insert_to_db(user_list)
     stock_insert_to_db(stock_list)
+    review_insert_to_db(rating_list)
     
