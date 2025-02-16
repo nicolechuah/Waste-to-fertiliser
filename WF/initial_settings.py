@@ -51,7 +51,7 @@ product_list = [Product("Organic Fertiliser - 100g", "This organic fertiliser is
  Product("Garden Fork - 2m", "A sturdy garden fork for digging and turning over soil. Perfect for preparing garden beds and removing weeds.", 80, 20.00, 6.00, True, [1], ["All", "Gardening Tools"]),
  Product("Cactus and Succulent Potting Mix - 10kg", "A specially formulated potting mix designed for cacti and succulents. Promotes healthy root growth and prevents waterlogged soil.", 180, 80.00, 40.00, True, [1], ["All", "Fertilisers"]),
  Product("Patio Set - 8 Piece", "Add a touch of style to your patio with this beautiful 8-piece set. Includes a table, chairs, and a parasol.", 40, 80.00, 40.00, True, [1], ["All", "Decorative Items"]),
- Product("Fertiliser Spreader - 4m", "A handy fertiliser spreader for evenly distributing fertiliser across your garden. Perfect for large gardens or commercial use.", 110, 40.00, 18.00, True, [1], ["All", "Gardening Tools"])]
+ Product("Fertiliser Spreader - 4m", "A handy fertiliser spreader for evenly distributing fertiliser across your garden. Perfect for large gardens or commercial use.", 0, 40.00, 18.00, True, [1], ["All", "Gardening Tools"])]
 
 
 def product_insert_to_db(product_list):
@@ -143,36 +143,25 @@ def user_insert_to_db(user_list):
     db.close()
     
 stock_list = [
-    Stock(1, 50, "2024-01-05"),
-    Stock(2, 40, "2024-01-15"),
-    Stock(3, 30, "2024-02-01"),
-    Stock(4, 25, "2024-02-10"),
-    Stock(5, 60, "2024-02-20"),
-    Stock(1, 55, "2024-03-03"),
-    Stock(2, 45, "2024-03-15"),
-    Stock(3, 35, "2024-03-22"),
-    Stock(4, 20, "2024-04-05"),
-    Stock(5, 65, "2024-04-18"),
-    Stock(1, 50, "2024-05-02"),
-    Stock(2, 40, "2024-05-15"),
-    Stock(3, 30, "2024-06-01"),
-    Stock(4, 25, "2024-06-12"),
-    Stock(5, 60, "2024-06-25"),
-    Stock(1, 55, "2024-07-05"),
-    Stock(2, 45, "2024-07-20"),
-    Stock(3, 35, "2024-08-03"),
-    Stock(4, 20, "2024-08-18"),
-    Stock(5, 65, "2024-09-01"),
-    Stock(1, 50, "2024-09-15"),
-    Stock(2, 40, "2024-10-01"),
-    Stock(3, 300, "2024-10-20"),  # Outlier: unusual high quantity or irregular interval.
-    Stock(4, 25, "2024-11-05"),
-    Stock(5, 60, "2025-02-15"),
-    Stock(1, 45, "2025-02-05"),
-    Stock(2, 30, "2025-02-20"),
-    Stock(3, 50, "2025-03-01"),
-    Stock(4, 55, "2025-03-15"),
-    Stock(5, 60, "2025-03-25")
+    Stock(1, 50, "2024-11-05"),
+    Stock(2, 40, "2024-11-15"),
+    Stock(3, 30, "2024-12-01"),
+    Stock(4, 25, "2024-12-10"),
+    Stock(5, 60, "2024-12-20"),
+    Stock(1, 55, "2024-12-03"),
+    Stock(2, 45, "2024-12-15"),
+    Stock(1, 48, "2025-02-10"),
+    Stock(1, 50, "2025-02-11"),
+    Stock(2, 35, "2025-02-18"),
+    Stock(3, 55, "2025-02-25"),
+    Stock(4, 60, "2025-03-05"),
+    Stock(5, 70, "2025-03-12"),
+    Stock(1, 55, "2025-03-20"),
+    Stock(2, 40, "2025-03-28"),
+    Stock(3, 45, "2025-04-07"),
+    Stock(4, 500, "2025-04-15"),  # Outlier: Unusually high quantity
+    Stock(5, 65, "2025-04-25"),
+
 ]
 
 

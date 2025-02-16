@@ -828,8 +828,7 @@ def export_products():
     for object in product_objects:
             object_info.append({"Product ID": object.get_product_id(), 
                            "Name": object.get_name(), 
-                           "Description": object.get_description(), 
-                           "Quantity": object.get_qty(), 
+                           "Description": object.get_description(),  
                            "Selling Price": object.get_selling_price(), 
                            "Cost Price": object.get_cost_price(), 
                            "Visible": object.get_visible(), 
@@ -1001,6 +1000,32 @@ def inventory():
         products_list.append(product)
     
     return render_template('inventory.html', products_list=products_list, form=inventory_form, title = "Inventory")
+
+@app.route('/export-inventory', methods=['GET'])
+def export_inventory():
+    db = shelve.open('storage.db', 'r')
+    try:
+        products_dict = db['Products']
+    except:
+        print("Error in retrieving Products from storage.db")
+        db.close()
+        return redirect(url_for('inventory'))
+    product_objects = []
+    for key, obj in products_dict.items():
+        product_objects.append(obj)
+    object_info = []
+    
+    for object in product_objects:
+        in_stock = True if object.get_qty() > 0 else False
+        object_info.append({"Product ID": object.get_product_id(), 
+                            "Name": object.get_name(),
+                            "In stock" : in_stock,
+                            "Quantity": object.get_qty(),})
+    df = pd.DataFrame(object_info)
+    output_file = os.path.join(TEMP_FOLDER, 'inventory.xlsx')
+    df.to_excel(output_file,index=False)
+    db.close()
+    return send_file(output_file, as_attachment=True)
 
 @app.route('/view-stock', methods=['GET', 'POST']) 
 def view_stock():
@@ -1194,11 +1219,12 @@ def view_product(id):
     db.close()
     products_list = []
     for key in products_dict:
-        product = products_dict.get(key)
-        products_list.append(product)
+        product = products_dict.get(id)
+        all_product = products_dict.get(key)
+        products_list.append(all_product)
 
     random.shuffle(products_list)
-
+    
     review_list = []
     for review in reviews_dict.values():
         if review.get_product_id() == id:
