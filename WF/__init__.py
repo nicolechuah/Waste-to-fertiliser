@@ -4,15 +4,14 @@ from AllForms import CollectFood,ReviewForm, InventoryForm
 from flask_bcrypt import Bcrypt
 from flask_login import login_user, current_user, logout_user, login_required, LoginManager
 from datetime import datetime, timedelta
-import shelve, User, initial_settings, subprocess
+import shelve, User, initial_settings, subprocess ,os, random, secrets
 from PIL import Image
 import pandas as pd
 from datetime import datetime
 from werkzeug.utils import secure_filename
-import os
-import secrets
 from Product import Product
 from Review import Review
+from Stock import Stock
 import shelve
 from Fwfuser import FWFUser
 from Collect import Collect
@@ -154,7 +153,7 @@ def filter_products(sort_key):
                 return float(product.get_average_rating())
             except:
                 return 0.0
-        products_list.sort(key=get_rating)
+        products_list.sort(key=get_rating, reverse=True)
         title = "Products by Rating"
     elif sort_key == 'hightolow':
         products_list.sort(key=lambda product: product.get_selling_price(), reverse=True)
@@ -683,7 +682,7 @@ def create_product():
                         new_image_id = old_image_id + 2
                     except:
                         print("Error in retrieving Image from image.db")
-                        db['ImageIDs'] = 3
+                        db['ImageIDs'] = 40
                         new_image_id = db['ImageIDs'] + 2
                     # save the image using {ID: image}
                     image_dict[new_image_id] = image_path
@@ -829,8 +828,7 @@ def export_products():
     for object in product_objects:
             object_info.append({"Product ID": object.get_product_id(), 
                            "Name": object.get_name(), 
-                           "Description": object.get_description(), 
-                           "Quantity": object.get_qty(), 
+                           "Description": object.get_description(),  
                            "Selling Price": object.get_selling_price(), 
                            "Cost Price": object.get_cost_price(), 
                            "Visible": object.get_visible(), 
@@ -1003,21 +1001,87 @@ def inventory():
     
     return render_template('inventory.html', products_list=products_list, form=inventory_form, title = "Inventory")
 
-@app.route('/update-inventory/<int:id>', methods=['POST'])
-def update_inventory(id):
-    inventory_form = InventoryForm(request.form)
-    inventory_form.product_id.data = id
-    if inventory_form.validate() and request.method == 'POST':
-        products_dict = {}
-        db = shelve.open('storage.db', 'w')
+@app.route('/export-inventory', methods=['GET'])
+def export_inventory():
+    db = shelve.open('storage.db', 'r')
+    try:
         products_dict = db['Products']
-        product = products_dict.get(id)
-        product.set_qty(inventory_form.qty.data)
-        db['Products'] = products_dict
-        print(product)
+    except:
+        print("Error in retrieving Products from storage.db")
         db.close()
-        flash(f'Inventory for {product.get_name()} updated!', 'success')
-    return redirect(url_for('inventory'))
+        return redirect(url_for('inventory'))
+    product_objects = []
+    for key, obj in products_dict.items():
+        product_objects.append(obj)
+    object_info = []
+    
+    for object in product_objects:
+        in_stock = True if object.get_qty() > 0 else False
+        object_info.append({"Product ID": object.get_product_id(), 
+                            "Name": object.get_name(),
+                            "In stock" : in_stock,
+                            "Quantity": object.get_qty(),})
+    df = pd.DataFrame(object_info)
+    output_file = os.path.join(TEMP_FOLDER, 'inventory.xlsx')
+    df.to_excel(output_file,index=False)
+    db.close()
+    return send_file(output_file, as_attachment=True)
+
+@app.route('/view-stock', methods=['GET', 'POST']) 
+def view_stock():
+    db = shelve.open('storage.db', 'r')
+    stock_dict = db["Stock"]
+    db.close()
+    stock_list = []
+    for key in stock_dict:
+        stock = stock_dict.get(key)
+        stock_list.append(stock)
+    stock_list.reverse()
+    return render_template('view-stock.html', stock_list=stock_list, title="View Stock")
+
+@app.route('/pending-stock', methods=['GET', 'POST'])
+def pending_stock():
+    db = shelve.open('storage.db', 'r')
+    stock_dict = db["Stock"]
+    db.close()
+    stock_list = []
+    for key in stock_dict:
+        stock = stock_dict.get(key)
+        if stock.get_confirmed_status() == False:
+            stock_list.append(stock)
+    return render_template('pending-stock.html', stock_list=stock_list, title="Pending Stock")
+
+@app.route('/confirm-stock/<int:product_id>/<int:stock_id>', methods=['POST'])
+def confirm_stock(product_id, stock_id):
+    inventory_form = InventoryForm(request.form)
+    if inventory_form.validate():
+       # in-memory modifications are saved.
+        db = shelve.open('storage.db', 'c', writeback=True)
+        products_dict = db.get('Products', {})
+        product = products_dict.get(product_id)
+        if product:
+            current_qty = product.get_qty()
+            # Update the product quantity by adding the input quantity.
+            product.set_qty(int(current_qty) + int(inventory_form.quantity.data))
+            
+
+            stock_dict = db.get('Stock', {})
+            for a_stock_id in stock_dict:
+                stock = stock_dict.get(stock_id)
+                if not stock.get_confirmed_status():
+                    stock.confirmed()  # mark this stock entry as confirmed
+            
+            db['Products'] = products_dict
+            db['Stock'] = stock_dict
+            db.close()
+            flash(f'Inventory for {product.get_name()} updated!', 'success')
+        else:
+            db.close()
+            flash('Product not found', 'danger')
+    else:
+        flash("Form validation error", "danger")
+    return redirect(url_for('view_stock'))
+
 @app.route('/update-product/<int:id>/', methods=['POST', 'GET'])
 def update_product(id):
     update_product = ProductForm(request.form)
@@ -1049,7 +1113,7 @@ def update_product(id):
                         new_image_id = old_image_id + 2
                     except:
                         print("Error in retrieving Image from image.db")
-                        db['ImageIDs'] = 3
+                        db['ImageIDs'] = 40
                         new_image_id = db['ImageIDs'] + 2
                     image_dict[new_image_id] = image_path
                     db['Images'] = image_dict
@@ -1153,37 +1217,49 @@ def view_product(id):
         db['Reviews'] = {}
         reviews_dict = db['Reviews']
     db.close()
-    product = products_dict.get(id)
+    products_list = []
+    for key in products_dict:
+        product = products_dict.get(id)
+        all_product = products_dict.get(key)
+        products_list.append(all_product)
+
+    random.shuffle(products_list)
     
     review_list = []
     for review in reviews_dict.values():
         if review.get_product_id() == id:
             review_list.append(review)
     review_form = ReviewForm()
-    if request.method == 'POST'and request.form.get('rating'):
+    if request.method == 'POST' and 'rating' in request.form:
         try:
-            author = session['username']
-        except:
-            author = "Anonymous"
-        rating = review_form.rating.data
-        comment = review_form.comment.data
-        date = datetime.today().strftime('%Y-%m-%d')
-        product_id = id
-        review_dict = {}
-        db = shelve.open('storage.db', 'c')
-        try:
-            review_dict = db['Reviews']
-            review_id = db['ReviewIDs']
-            Review.review_id = review_id
-        except:
-            print("Error in retrieving Reviews from storage.db")
-        review = Review(author, rating, comment, product_id,date)
-        review_dict[review.get_review_id()] = review
-        db['Reviews'] = review_dict
-        db['ReviewIDs'] = Review.review_id
-        db.close()
-        print(review)
-        flash('Review submitted!', 'success')
+            author = session.get('username', "Anonymous")
+            rating = review_form.rating.data
+            comment = review_form.comment.data.strip()
+            date = datetime.today().strftime('%Y-%m-%d')
+            
+            # Open database in write mode
+            with shelve.open('storage.db', writeback=True) as db:
+                # Get or create reviews collection
+                reviews_dict = db.setdefault('Reviews', {})
+                review_id = db.get('ReviewIDs', 0)
+                
+                # Create and store new review
+                new_review = Review(author, rating, comment, id, date)
+                print(new_review)
+                reviews_dict[new_review.get_review_id()] = new_review
+                
+                # Update review ID counter
+                db['ReviewIDs'] = review_id + 1
+                db.sync()
+            
+                
+            flash('Review submitted successfully!', 'success')
+            return redirect(url_for('view_product', id=id))
+
+        except Exception as e:
+            print(f"Error submitting review: {str(e)}")
+            flash('Error submitting review. Please try again.', 'danger')
+            return redirect(url_for('view_product', id=id))
     if request.method == 'POST' and request.form.get('product_name'):
         product_name = request.form.get('product_name')
         unit_price = float(request.form.get('unit_price', 0))
@@ -1213,7 +1289,7 @@ def view_product(id):
         except Exception as e:
             flash(f"Error adding product to cart: {e}", 'danger')
     return render_template('view-product.html', product=product, title = "View Product",
-                           review_form=review_form, review_list=review_list)
+                           review_form=review_form, review_list=review_list, products_list=products_list[:5])
     
 
 

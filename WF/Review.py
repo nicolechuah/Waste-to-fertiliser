@@ -46,4 +46,4 @@ class Review:
 
     
     def __str__(self):
-        return f"Author: {self.__author}, Rating: {self.__rating}, Comment: {self.__comment} Product ID: {self.__product_id}"
+        return f"review id {self.__review_id}Author: {self.__author}, Rating: {self.__rating}, Comment: {self.__comment} Product ID: {self.__product_id}"

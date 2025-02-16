@@ -38,7 +38,7 @@ class MultiCheckboxField(SelectMultipleField):
     option_widget = widgets.CheckboxInput()
 
 categories = [("All", "All"),("Fertiliser", "Fertiliser"),("Seeds", "Seeds"),
-              ("Tools", "Gardening Tools"),("Pots", "Pots & Planters"),("Kits", "Gardening Kits")]
+              ("Tools", "Gardening Tools"),("Pots", "Pots & Planters")]
 
 class ProductForm(Form):
     name = StringField('Product Name', [validators.Length(min=3, max=50, message="Product name must be 3-150 characters long"), validators.DataRequired
@@ -53,8 +53,8 @@ class ProductForm(Form):
     category = MultiCheckboxField('Category', [validators.Optional()],choices=categories)
     
 
-class InventoryForm(FlaskForm):
-    qty = IntegerField('Quantity', [validators.NumberRange(min=0, max=100000), validators.DataRequired(message="Please enter a quantity.")])
+class InventoryForm(Form):
+    quantity = HiddenField('Quantity', validators=[DataRequired()])
     product_id = HiddenField('Product ID', validators=[DataRequired()])
 
 class ReviewForm(FlaskForm):
