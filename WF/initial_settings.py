@@ -1,4 +1,5 @@
 from Product import Product
+from Stock import Stock
 from User import User
 import shelve
 
@@ -50,7 +51,7 @@ product_list = [Product("Organic Fertiliser - 100g", "This organic fertiliser is
  Product("Garden Fork - 2m", "A sturdy garden fork for digging and turning over soil. Perfect for preparing garden beds and removing weeds.", 80, 20.00, 6.00, True, [1], ["All", "Gardening Tools"]),
  Product("Cactus and Succulent Potting Mix - 10kg", "A specially formulated potting mix designed for cacti and succulents. Promotes healthy root growth and prevents waterlogged soil.", 180, 80.00, 40.00, True, [1], ["All", "Fertilisers"]),
  Product("Patio Set - 8 Piece", "Add a touch of style to your patio with this beautiful 8-piece set. Includes a table, chairs, and a parasol.", 40, 80.00, 40.00, True, [1], ["All", "Decorative Items"]),
- Product("Fertiliser Spreader - 4m", "A handy fertiliser spreader for evenly distributing fertiliser across your garden. Perfect for large gardens or commercial use.", 110, 40.00, 18.00, True, [1], ["All", "Gardening Tools"])]
+ Product("Fertiliser Spreader - 4m", "A handy fertiliser spreader for evenly distributing fertiliser across your garden. Perfect for large gardens or commercial use.", 0, 40.00, 18.00, True, [1], ["All", "Gardening Tools"])]
 
 
 def product_insert_to_db(product_list):
@@ -72,7 +73,7 @@ def product_insert_to_db(product_list):
     db.close()
     
 categories = [("All", "All"),("Fertiliser", "Fertiliser"),("Seeds", "Seeds"),
-              ("Tools", "Gardening Tools"),("Pots", "Pots & Planters"),("Kits", "Gardening Kits")]
+              ("Tools", "Gardening Tools"),("Pots", "Pots & Planters")]
 
 def categories_insert_to_db(categories):
     db = shelve.open('storage.db', 'c')
@@ -140,6 +141,52 @@ def user_insert_to_db(user_list):
         print('Users already exist!')
     
     db.close()
+    
+stock_list = [
+    Stock(1, 50, "2024-11-05"),
+    Stock(2, 40, "2024-11-15"),
+    Stock(3, 30, "2024-12-01"),
+    Stock(4, 25, "2024-12-10"),
+    Stock(5, 60, "2024-12-20"),
+    Stock(1, 55, "2024-12-03"),
+    Stock(2, 45, "2024-12-15"),
+    Stock(1, 48, "2025-02-10"),
+    Stock(1, 50, "2025-02-11"),
+    Stock(2, 35, "2025-02-18"),
+    Stock(3, 55, "2025-02-25"),
+    Stock(4, 60, "2025-03-05"),
+    Stock(5, 70, "2025-03-12"),
+    Stock(1, 55, "2025-03-20"),
+    Stock(2, 40, "2025-03-28"),
+    Stock(3, 45, "2025-04-07"),
+    Stock(4, 500, "2025-04-15"),  # Outlier: Unusually high quantity
+    Stock(5, 65, "2025-04-25"),
+
+]
+
+
+for stock in stock_list[:-10]:
+    stock.confirmed()
+def stock_insert_to_db(stock_list):
+    db = shelve.open('storage.db', 'c')
+    stock_dict = {}
+    try:
+        stock_dict = db['Stock']
+    except KeyError:
+        print('Error in retrieving Stock from storage.db')
+        db["Stock"] = {}
+        stock_dict = db['Stock']
+    if len(stock_dict) < 3:
+        for stock in stock_list:
+            stock_dict[stock.get_stock_id()] = stock
+        db['Stock'] = stock_dict
+        print('Stock created!')
+    else:
+        print('Stock already exist!')
+        
+    db.close()
+
+
 
 # Modify insert_all to include user insertion
 def insert_all():
@@ -147,4 +194,5 @@ def insert_all():
     categories_insert_to_db(categories)
     image_insert_to_db()
     user_insert_to_db(user_list)
+    stock_insert_to_db(stock_list)
     
