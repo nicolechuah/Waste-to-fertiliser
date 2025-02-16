@@ -70,7 +70,7 @@
                 {% endblock %}
             </div>
         </div>
-    {% if not session.get('is_admin')%}
+    {% if not session.get('is_admin') and request.endpoint != "login" %}
     {% block footer %}
     <footer class="text-center text-lg-start text-white mt-auto" style="background-color: #587f37;">
         <div class="container p-4">
