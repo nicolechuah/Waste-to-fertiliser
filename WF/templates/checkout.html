@@ -43,4 +43,37 @@
         <button type="submit" class="btn btn-success">Proceed to Payment</button>
     </form>
 </div>
+
+<!-- Popup for Existing Delivery Details -->
+{% if show_popup and delivery_data %}
+<div class="modal fade" id="deliveryPopup" tabindex="-1" aria-labelledby="deliveryPopupLabel" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="deliveryPopupLabel">Existing Delivery Details</h5>
+            </div>
+            <div class="modal-body">
+                <p><strong>Full Name:</strong> {{ delivery_data.full_name }}</p>
+                <p><strong>Phone Number:</strong> {{ delivery_data.phone_number }}</p>
+                <p><strong>Postal Code:</strong> {{ delivery_data.postal_code }}</p>
+                <p><strong>Address:</strong> {{ delivery_data.address }}</p>
+                <p><strong>Unit Number:</strong> {{ delivery_data.unit_number or 'N/A' }}</p>
+            </div>
+            <div class="modal-footer">
+                <a href="{{ url_for('payment') }}" class="btn btn-success w-100">Use Existing Details (Click Outside to Enter New Details)</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- JavaScript to Show Popup -->
+{% if show_popup and delivery_data %}
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        var deliveryPopup = new bootstrap.Modal(document.getElementById('deliveryPopup'));
+        deliveryPopup.show();
+    });
+</script>
+{% endif %}
 {% endblock %}

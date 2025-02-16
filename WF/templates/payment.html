@@ -33,7 +33,41 @@
             <div class="text-danger">{{ error }}</div>
             {% endfor %}
         </div>
-        <button type="submit" class="btn btn-success">Submit Payment</button>
+        <button type="submit" class="btn btn-success">Complete Payment</button>
     </form>
 </div>
+
+<!-- Popup for Existing Payment Details -->
+{% if show_popup and payment_data %}
+<div class="modal fade" id="paymentPopup" tabindex="-1" aria-labelledby="paymentPopupLabel" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="paymentPopupLabel">Existing Payment Details</h5>
+            </div>
+            <div class="modal-body">
+                <p><strong>Cardholder Name:</strong> {{ payment_data.cardholder_name }}</p>
+                <p><strong>Card Number:</strong> {{ payment_data.card_number }}</p>
+                <p><strong>Expiry Date:</strong> {{ payment_data.expiry_date }}</p>
+                <p><strong>CVV:</strong> {{ payment_data.cvv }}</p>
+            </div>
+            <div class="modal-footer">
+                <form action="{{ url_for('use_existing_payment') }}" method="POST">
+                    <button type="submit" class="btn btn-success w-100">Use Existing Details (Click Outside to Enter New Details)</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- JavaScript to Show Popup -->
+{% if show_popup and payment_data %}
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        var paymentPopup = new bootstrap.Modal(document.getElementById('paymentPopup'));
+        paymentPopup.show();
+    });
+</script>
+{% endif %}
 {% endblock %}
