@@ -6,7 +6,12 @@
 
     <!-- Track Your Order Section -->
     <div class="mt-4">
-        <h3>Track Your Order</h3>
+        <div class="d-flex justify-content-between align-items-center">
+            <h3>Track Your Order</h3>
+            <form action="{{ url_for('delete_order', id=0) }}" method="POST" class="d-inline">
+                <button type="submit" class="btn btn-danger">Delete All Orders</button>
+            </form>
+        </div>
         <table class="table table-bordered">
             <thead>
                 <tr>
@@ -18,22 +23,33 @@
                 </tr>
             </thead>
             <tbody>
-                {% for order in complete_data %}
-                <tr>
-                    <td>{{ order.name }}</td>
-                    <td>${{ "%.2f"|format(order.unit_price) }}</td>
-                    <td>{{ order.quantity }}</td>
-                    <td>${{ "%.2f"|format(order.total_price) }}</td>
-                    <td>In Progress</td>
-                </tr>
-                {% endfor %}
+                {% if complete_data %}
+                    {% for order in complete_data %}
+                    <tr>
+                        <td>{{ order['name'] }}</td>
+                        <td>${{ "%.2f"|format(order['unit_price']) }}</td>
+                        <td>{{ order['quantity'] }}</td>
+                        <td>${{ "%.2f"|format(order['total_price']) }}</td>
+                        <td>{{ order['status'] }}</td>
+                    </tr>
+                    {% endfor %}
+                {% else %}
+                    <tr>
+                        <td colspan="5" class="text-center">No order data available.</td>
+                    </tr>
+                {% endif %}
             </tbody>
         </table>
     </div>
 
     <!-- View Delivery Details Section -->
     <div class="mt-4">
-        <h3>View Delivery Details</h3>
+        <div class="d-flex justify-content-between align-items-center">
+            <h3>View Delivery Details</h3>
+            <form action="{{ url_for('delete_delivery', id=0) }}" method="POST" class="d-inline">
+                <button type="submit" class="btn btn-danger">Delete All Delivery Details</button>
+            </form>
+        </div>
         <table class="table table-bordered">
             <thead>
                 <tr>
@@ -46,25 +62,36 @@
                 </tr>
             </thead>
             <tbody>
-                {% for delivery in delivery_data %}
-                <tr>
-                    <td>{{ delivery.full_name }}</td>
-                    <td>{{ delivery.phone_number }}</td>
-                    <td>{{ delivery.postal_code }}</td>
-                    <td>{{ delivery.address }}</td>
-                    <td>{{ delivery.unit_number or 'N/A' }}</td>
-                    <td>
-                        <a href="{{ url_for('edit_delivery', id=loop.index0) }}" class="btn btn-warning">Edit</a>
-                    </td>
-                </tr>
-                {% endfor %}
+                {% if delivery_data %}
+                    {% for delivery in delivery_data %}
+                    <tr>
+                        <td>{{ delivery.full_name }}</td>
+                        <td>{{ delivery.phone_number }}</td>
+                        <td>{{ delivery.postal_code }}</td>
+                        <td>{{ delivery.address }}</td>
+                        <td>{{ delivery.unit_number or 'N/A' }}</td>
+                        <td>
+                            <a href="{{ url_for('edit_delivery', id=loop.index0) }}" class="btn btn-warning">Edit</a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                {% else %}
+                    <tr>
+                        <td colspan="6" class="text-center">No delivery data available.</td>
+                    </tr>
+                {% endif %}
             </tbody>
         </table>
     </div>
 
     <!-- View Payment Details Section -->
     <div class="mt-4">
-        <h3>View Payment Details</h3>
+        <div class="d-flex justify-content-between align-items-center">
+            <h3>View Payment Details</h3>
+            <form action="{{ url_for('delete_payment', id=0) }}" method="POST" class="d-inline">
+                <button type="submit" class="btn btn-danger">Delete All Payment Details</button>
+            </form>
+        </div>
         <table class="table table-bordered">
             <thead>
                 <tr>
@@ -76,17 +103,23 @@
                 </tr>
             </thead>
             <tbody>
-                {% for payment in payment_data %}
-                <tr>
-                    <td>{{ payment.cardholder_name }}</td>
-                    <td>{{ payment.card_number }}</td>
-                    <td>{{ payment.expiry_date }}</td>
-                    <td>{{ payment.cvv }}</td>
-                    <td>
-                        <a href="{{ url_for('edit_payment', id=loop.index0) }}" class="btn btn-warning">Edit</a>
-                    </td>
-                </tr>
-                {% endfor %}
+                {% if payment_data %}
+                    {% for payment in payment_data %}
+                    <tr>
+                        <td>{{ payment.cardholder_name }}</td>
+                        <td>{{ payment.card_number }}</td>
+                        <td>{{ payment.expiry_date }}</td>
+                        <td>{{ payment.cvv }}</td>
+                        <td>
+                            <a href="{{ url_for('edit_payment', id=loop.index0) }}" class="btn btn-warning">Edit</a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                {% else %}
+                    <tr>
+                        <td colspan="5" class="text-center">No payment data available.</td>
+                    </tr>
+                {% endif %}
             </tbody>
         </table>
     </div>

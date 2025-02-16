@@ -253,16 +253,17 @@ def buy_now():
                         'name': product_name,
                         'unit_price': unit_price,
                         'quantity': quantity,
-                        'total_price': unit_price * quantity
+                        'total_price': unit_price * quantity,
+                        'status': 'In Progress'  # Add default status
                     })
 
                 db['cart']['items'] = cart_items
-            
+
             flash(f"{product_name} successfully added to cart!", 'success')
             return redirect(url_for('checkout'))
         except Exception as e:
             flash(f"Error processing request: {e}", 'danger')
-    
+
     return redirect(url_for('home'))
 
 @app.route('/cart', methods=['GET', 'POST'])
@@ -319,9 +320,20 @@ def checkout():
         with shelve.open('storage.db', writeback=True) as db:
             if 'delivery' not in db:
                 db['delivery'] = {'records': []}
-            db['delivery']['records'].append(delivery_data)
+            # Overwrite existing delivery data if it exists
+            if db['delivery']['records']:
+                db['delivery']['records'][0] = delivery_data  # Overwrite the first record
+            else:
+                db['delivery']['records'].append(delivery_data)  # Add new record
         return redirect(url_for('payment'))
-    return render_template('checkout.html', form=form, title="Checkout")
+
+    # Check if delivery data already exists
+    with shelve.open('storage.db', 'r') as db:
+        delivery_data = db.get('delivery', {}).get('records', [])
+        if delivery_data:
+            return render_template('checkout.html', form=form, delivery_data=delivery_data[0], show_popup=True)
+    
+    return render_template('checkout.html', form=form, show_popup=False)
 
 @app.route('/payment', methods=['GET', 'POST'])
 def payment():
@@ -336,16 +348,45 @@ def payment():
         with shelve.open('storage.db', writeback=True) as db:
             if 'payment' not in db:
                 db['payment'] = {'records': []}
-            db['payment']['records'].append(payment_data)
+            # Overwrite existing payment data if it exists
+            if db['payment']['records']:
+                db['payment']['records'][0] = payment_data  # Overwrite the first record
+            else:
+                db['payment']['records'].append(payment_data)  # Add new record
 
-            if 'complete' not in db:
-                db['complete'] = {'items': []}
-            db['complete']['items'].extend(db.get('cart', {}).get('items', []))
-            db['cart'] = {'items': []}
+            # Move cart items to "complete" (track your order)
+            if 'cart' in db and 'items' in db['cart']:
+                if 'complete' not in db:
+                    db['complete'] = {'items': []}
+                # Add status to each order
+                for item in db['cart']['items']:
+                    item['status'] = 'In Progress'  # Default status
+                db['complete']['items'].extend(db['cart']['items'])
+                db['cart'] = {'items': []}  # Clear the cart
 
         flash("Payment successfully processed!", 'success')
         return redirect(url_for('home'))
-    return render_template('payment.html', form=form, title="Payment")
+
+    # Check if payment data already exists
+    with shelve.open('storage.db', 'r') as db:
+        payment_data = db.get('payment', {}).get('records', [])
+        if payment_data:
+            return render_template('payment.html', form=form, payment_data=payment_data[0], show_popup=True)
+
+    return render_template('payment.html', form=form, show_popup=False)
+
+@app.route('/use_existing_payment', methods=['POST'])
+def use_existing_payment():
+    with shelve.open('storage.db', writeback=True) as db:
+        # Move cart items to "complete" (track your order)
+        if 'cart' in db and 'items' in db['cart']:
+            if 'complete' not in db:
+                db['complete'] = {'items': []}
+            db['complete']['items'].extend(db['cart']['items'])
+            db['cart'] = {'items': []}  # Clear the cart
+
+    flash("Payment successfully processed using existing details!", 'success')
+    return redirect(url_for('home'))
 
 @app.route('/user')
 def user():
@@ -354,7 +395,11 @@ def user():
         delivery_data = db.get('delivery', {}).get('records', [])
         payment_data = db.get('payment', {}).get('records', [])
 
-    return render_template('user.html', complete_data=complete_data, delivery_data=delivery_data, payment_data=payment_data, title="User Data")
+    return render_template('user.html', 
+                           complete_data=complete_data, 
+                           delivery_data=delivery_data, 
+                           payment_data=payment_data, 
+                           title="User Data")
 
 @app.route('/edit-delivery/<int:id>', methods=['GET', 'POST'])
 def edit_delivery(id):
@@ -377,13 +422,15 @@ def edit_delivery(id):
             flash("Delivery details updated successfully.", 'success')
             return redirect(url_for('user'))
 
+        # Pre-fill the form with existing data
         form.full_name.data = delivery_data[id]['full_name']
         form.phone_number.data = delivery_data[id]['phone_number']
         form.postal_code.data = delivery_data[id]['postal_code']
         form.address.data = delivery_data[id]['address']
         form.unit_number.data = delivery_data[id].get('unit_number')
 
-    return render_template('checkout.html', form=form, title="Edit Delivery Details")
+    return render_template('edit_delivery.html', form=form, id=id, title="Edit Delivery Details")
+
 
 @app.route('/edit-payment/<int:id>', methods=['GET', 'POST'])
 def edit_payment(id):
@@ -405,12 +452,107 @@ def edit_payment(id):
             flash("Payment details updated successfully.", 'success')
             return redirect(url_for('user'))
 
+        # Pre-fill the form with existing data
         form.cardholder_name.data = payment_data[id]['cardholder_name']
         form.card_number.data = payment_data[id]['card_number']
         form.expiry_date.data = payment_data[id]['expiry_date']
         form.cvv.data = payment_data[id]['cvv']
 
-    return render_template('home.html', form=form, title="Edit Payment Details")
+    return render_template('edit_payment.html', form=form, id=id, title="Edit Payment Details")
+
+@app.route('/delete_delivery/<int:id>', methods=['POST'])
+def delete_delivery(id):
+    with shelve.open('storage.db', writeback=True) as db:
+        if 'delivery' in db and 'records' in db['delivery']:
+            delivery_data = db['delivery']['records']
+            if id < len(delivery_data):
+                delivery_data.pop(id)
+                db['delivery']['records'] = delivery_data
+                flash('Delivery details deleted successfully.', 'success')
+            else:
+                flash('Invalid delivery record.', 'danger')
+    return redirect(url_for('user'))
+
+
+@app.route('/delete_payment/<int:id>', methods=['POST'])
+def delete_payment(id):
+    with shelve.open('storage.db', writeback=True) as db:
+        if 'payment' in db and 'records' in db['payment']:
+            payment_data = db['payment']['records']
+            if id < len(payment_data):
+                payment_data.pop(id)
+                db['payment']['records'] = payment_data
+                flash('Payment details deleted successfully.', 'success')
+            else:
+                flash('Invalid payment record.', 'danger')
+    return redirect(url_for('user'))
+
+
+@app.route('/delete_order/<int:id>', methods=['POST'])
+def delete_order(id):
+    with shelve.open('storage.db', writeback=True) as db:
+        if 'complete' in db and 'items' in db['complete']:
+            order_data = db['complete']['items']
+            if id < len(order_data):
+                order_data.pop(id)
+                db['complete']['items'] = order_data
+                flash('Order deleted successfully.', 'success')
+            else:
+                flash('Invalid order record.', 'danger')
+    return redirect(url_for('user'))
+
+@app.route('/orders')
+def orders():
+    with shelve.open('storage.db', 'r') as db:
+        orders = db.get('complete', {}).get('items', [])
+        users_dict = db.get('Users', {})  # Retrieve user data
+
+    # Attach email to each order
+    for order in orders:
+        user_id = order.get('user_id')  # Ensure orders store user_id
+        order['email'] = users_dict.get(user_id, {}).get('email', '240732X@mymail.nyp.edu.sg')
+
+    return render_template('orders.html', 
+                           orders=orders, 
+                           gross_profit=sum(order['total_price'] for order in orders),
+                           total_sales=len(orders),
+                           net_profit=sum(order['total_price'] - (order.get('cost_price', 0) * order['quantity']) for order in orders))
+
+
+
+
+
+
+@app.route('/update-order-status/<int:order_id>', methods=['POST'])
+def update_order_status(order_id):
+    with shelve.open('storage.db', writeback=True) as db:
+        orders = db.get('complete', {}).get('items', [])
+        products_dict = db.get('Products', {})
+
+        if 0 <= order_id < len(orders):
+            order = orders[order_id]
+            current_status = order['status']
+            new_status = request.json.get('status', 'In Progress')
+
+            # Find the corresponding product in inventory
+            for product in products_dict.values():
+                if product.get_name() == order['name']:
+                    if current_status == 'In Progress' and new_status == 'Delivered':
+                        # Reduce inventory
+                        product.set_qty(product.get_qty() - order['quantity'])
+                    elif current_status == 'Delivered' and new_status == 'In Progress':
+                        # Restore inventory
+                        product.set_qty(product.get_qty() + order['quantity'])
+                    break  # Exit loop once product is found
+
+            # Update order status
+            order['status'] = new_status
+            db['complete']['items'] = orders
+            db['Products'] = products_dict
+
+            return jsonify({'success': True, 'new_status': new_status})
+
+    return jsonify({'success': False})
 
 
 @app.route('/help')
@@ -775,6 +917,36 @@ def import_products():
             flash("Error importing products. Please check the file format.", 'danger')
     return redirect(url_for('product_management'))
             
+@app.route('/export-orders', methods=['GET'])
+def export_orders():
+    with shelve.open('storage.db', 'r') as db:
+        orders = db.get('complete', {}).get('items', [])
+        users_dict = db.get('Users', {})  # Retrieve user data
+
+    # Convert orders to a DataFrame with the new Email column
+    order_data = []
+    for order in orders:
+        user_id = order.get('user_id')  # Ensure orders store user_id
+        email = users_dict.get(user_id, {}).get('email', 'Unknown')
+        
+        order_data.append({
+            "Email": "240732X@mymail.nyp.edu.sg",  # New column
+            "Product Name": order['name'],
+            "Quantity": order['quantity'],
+            "Unit Price": order['unit_price'],
+            "Total Price": order['total_price'],
+            "Status": order['status']
+        })
+
+    df = pd.DataFrame(order_data)
+
+    # Define the file path
+    output_file = os.path.join(TEMP_FOLDER, 'orders.xlsx')
+    df.to_excel(output_file, index=False)
+
+    return send_file(output_file, as_attachment=True)
+
+
 
 @app.route('/export-products', methods=['GET'])
 def export_products():

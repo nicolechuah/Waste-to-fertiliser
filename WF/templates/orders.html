@@ -1,0 +1,100 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container mt-5">
+    <!-- Dashboard Section -->
+    <div class="row justify-content-center mb-5">
+        <!-- Gross Profit Box -->
+        <div class="col-md-4">
+            <div class="card bg-success text-white text-center p-4">
+                <h3>Gross Profit</h3>
+                <h2>${{ "{:,.2f}".format(gross_profit) }}</h2>
+            </div>
+        </div>
+        <!-- Total Sales Box -->
+        <div class="col-md-4">
+            <div class="card bg-danger text-white text-center p-4">
+                <h3>Total Sales</h3>
+                <h2>{{ total_sales }}</h2>
+            </div>
+        </div>
+        <!-- Net Profit Box -->
+        <div class="col-md-4">
+            <div class="card bg-info text-white text-center p-4">
+                <h3>Net Profit</h3>
+                <h2>${{ "{:,.2f}".format(net_profit) }}</h2>
+            </div>
+        </div>
+    </div>
+    <!-- Export Orders Button -->
+<div class="text-center my-3">
+    <a href="{{ url_for('export_orders') }}" class="btn btn-primary">Export Orders to Excel</a>
+</div>
+    <!-- Orders Table -->
+    <div class="row justify-content-center">
+        <div class="col-md-10">
+            <h2 class="text-center mb-4">Order History</h2>
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th scope="col">Email</th>
+                        <th scope="col">Product Name</th>
+                        <th scope="col">Quantity</th>
+                        <th scope="col">Unit Price</th>
+                        <th scope="col">Total Price</th>
+                        <th scope="col">Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for order in orders %}
+                    <tr>
+                        <td>{{ order['email'] }}</td> <!-- New Email Column -->
+                        <td>{{ order['name'] }}</td>
+                        <td>{{ order['quantity'] }}</td>
+                        <td>${{ "{:,.2f}".format(order['unit_price']) }}</td>
+                        <td>${{ "{:,.2f}".format(order['total_price']) }}</td>
+                        <td>
+                            <button class="btn btn-sm status-btn 
+                                      {% if order['status'] == 'In Progress' %}btn-warning{% else %}btn-success{% endif %}"
+                                    data-order-id="{{ loop.index0 }}"
+                                    onclick="updateStatus(this)">
+                                {{ order['status'] }}
+                            </button>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            
+        </div>
+    </div>
+</div>
+
+<script>
+    function updateStatus(button) {
+        const orderId = button.getAttribute('data-order-id');
+        const currentStatus = button.innerText.trim();
+        const newStatus = currentStatus === 'In Progress' ? 'Delivered' : 'In Progress';
+
+        // Send an AJAX request to update the status
+        fetch(`/update-order-status/${orderId}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ status: newStatus }),
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Update the button text and style
+                button.innerText = newStatus;
+                button.classList.remove('btn-warning', 'btn-success');
+                button.classList.add(newStatus === 'In Progress' ? 'btn-warning' : 'btn-success');
+            } else {
+                alert('Failed to update status.');
+            }
+        })
+        .catch(error => console.error('Error:', error));
+    }
+</script>
+{% endblock %}
