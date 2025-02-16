@@ -2,6 +2,8 @@ from Product import Product
 from Stock import Stock
 from User import User
 from Review import Review
+from Fwfuser import FWFUser
+from Collect import Collect
 import shelve
 
 product_list = [Product("Organic Fertiliser - 100g", "This organic fertiliser is made from our food waste compost. It contains no chemical, contains no harmful pathogens, improves soil organic matter, serves as a strong foundation to bare soil, is suitable for all plants, creates savings for users,has a high NPK value and no offensive odour.",500,3.00, 0.50, True,[3],["All", "Fertiliser"]), 
@@ -221,6 +223,71 @@ def review_insert_to_db(rating_list):
     db.close()
 
 
+fwf_users = [
+    FWFUser("Liam", "Tan", "M", "liam.tan@gmail.com", "Excited to learn more about sustainable farming."),
+    FWFUser("Sophia", "Lim", "F", "sophia.lim@nyp.com", ""),
+    FWFUser("Ethan", "Ng", "M", "ethan.ng@yahoo.com", "Interested in reducing household food waste."),
+    FWFUser("Olivia", "Chong", "F", "olivia.chong@gmail.com", "Looking forward to hands-on activities."),
+    FWFUser("Noah", "Teo", "M", "noah.teo@gmail.com", ""),
+    FWFUser("Ava", "Goh", "F", "ava.goh@gmail.com", "I volunteer at a food rescue organization."),
+    FWFUser("Daniel", "Wong", "M", "daniel.wong@gmail.com", "Keen on learning composting techniques."),
+    FWFUser("Emma", "Seah", "F", "emma.seah@nyp.com", ""),
+    FWFUser("Benjamin", "Yeo", "M", "benjamin.yeo@yahoo.com", "Want to teach my kids about food sustainability."),
+    FWFUser("Mia", "Ong", "F", "mia.ong@gmail.com", "Looking for ways to reduce restaurant food waste."),
+]
+
+def fwfuser_insert_to_db(fwf_users):
+    db = shelve.open('storage.db', 'c')
+    fwf_users_dict = {}
+    try:
+        fwf_users_dict = db['FWFUser']
+    except KeyError:
+        print('Error in retrieving FWFUsers from storage.db')
+        db["FWFUser"] = {}
+        fwf_users_dict = db['FWFUser']
+    if len(fwf_users_dict) < 3:
+        for fwf_user in fwf_users:
+            fwf_users_dict[fwf_user.get_fwfuser_id()] = fwf_user
+        db['FWFUser'] = fwf_users_dict
+        print('FWFUsers created!')
+    else:
+        print('FWFUsers already exist!')
+        
+    db.close()
+
+collect_list = [
+    Collect("Taste of Singapore", "contact@tasteofsgh.com", "Leftover", "Schedule", "1 Orchard Road, Singapore", "Morning"),
+    Collect("Burger Bonanza", "info@burgerbonanza.sg", "Expired", "On-Demand", "50 Bukit Timah Road, Singapore", "Afternoon"),
+    Collect("Ramen Express", "hello@ramenexpress.sg", "Leftover", "Drop off", "100 Jurong East Ave 1, Singapore", "Evening"),
+    Collect("The Spice House", "inquiries@thespicehouse.sg", "Spoiled", "Schedule", "25 Marina Boulevard, Singapore", "Morning"),
+    Collect("Sushi Central", "sushi@sushicentral.sg", "Expired", "On-Demand", "80 Raffles Quay, Singapore", "Afternoon"),
+    Collect("Pasta Paradise", "contact@pastaparadise.sg", "Leftover", "Drop off", "200 Changi Road, Singapore", "Evening"),
+    Collect("Curry Corner", "info@currycorner.sg", "Others", "Schedule", "15 Little India, Singapore", "Morning"),
+    Collect("Deli Delight", "sales@delidelight.sg", "Spoiled", "On-Demand", "300 Clementi Avenue, Singapore", "Afternoon"),
+    Collect("Steak Station", "contact@steakstation.sg", "Leftover", "Drop off", "400 Bedok North Road, Singapore", "Evening"),
+    Collect("Vegan Vibes", "hello@veganvibes.sg", "Others", "Schedule", "75 Holland Road, Singapore", "Morning")
+]
+
+def collect_insert_to_db(collect_list):
+    db = shelve.open('storage.db', 'c')
+    collect_dict = {}
+    try:
+        collect_dict = db['Collectusers']
+
+    except KeyError:
+        print('Error in retrieving Collect from storage.db')
+        db['Collectusers'] = {}
+        collect_dict = db['Collectusers']
+    if len(collect_dict) < 3:
+        for collect in collect_list:
+            collect_dict[collect.get_collect_id()] = collect
+        db['Collectusers'] = collect_dict
+        print('Collect created!')
+    else:
+        print('Collect already exist!')
+        
+    db.close()
+
 
 # Modify insert_all to include user insertion
 def insert_all():
@@ -230,4 +297,6 @@ def insert_all():
     stock_insert_to_db(stock_list)
     product_insert_to_db(product_list)
     review_insert_to_db(rating_list)
+    fwfuser_insert_to_db(fwf_users)
+    collect_insert_to_db(collect_list)
     
