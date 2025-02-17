@@ -1582,7 +1582,7 @@ def edit_fwfuser(id):
 
 @app.route('/delete_fwfuser/<int:id>/', methods=['POST'])
 def delete_fwfuser(id):
-    db = shelve.open('FWFUser.db', 'w')
+    db = shelve.open('storage.db', 'w')
 
     # Retrieve the users' data from the database
     fwfuser_dict = db.get('FWFUser', {})
